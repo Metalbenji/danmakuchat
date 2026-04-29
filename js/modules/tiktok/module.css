@@ -1,0 +1,17 @@
+/* TikTok Module - Event-specific styles */
+.danmaku-item.event.tiktok {
+    background: linear-gradient(135deg, rgba(255, 0, 80, 0.35), rgba(200, 0, 60, 0.25));
+    border-color: rgba(255, 0, 80, 0.5);
+    box-shadow: 0 0 14px rgba(255, 0, 80, 0.4);
+}
+
+.danmaku-item.event.tiktok.sub {
+    background: linear-gradient(135deg, rgba(255, 0, 80, 0.4), rgba(200, 0, 60, 0.3));
+    border-color: rgba(255, 0, 80, 0.6);
+}
+
+.danmaku-item.event.tiktok.gift {
+    background: linear-gradient(135deg, rgba(255, 0, 80, 0.45), rgba(255, 100, 150, 0.3));
+    border-color: rgba(255, 0, 80, 0.6);
+    box-shadow: 0 0 18px rgba(255, 0, 80, 0.5);
+}

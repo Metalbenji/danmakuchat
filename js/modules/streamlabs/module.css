@@ -1,0 +1,6 @@
+/* StreamLabs Module - Event styles */
+.danmaku-item.event.streamlabs {
+    background: linear-gradient(135deg, rgba(50, 160, 218, 0.35), rgba(30, 120, 180, 0.25));
+    border-color: rgba(50, 160, 218, 0.5);
+    box-shadow: 0 0 14px rgba(50, 160, 218, 0.4);
+}

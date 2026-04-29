@@ -1,0 +1,6 @@
+/* Patreon Module - Event styles */
+.danmaku-item.event.patreon {
+    background: linear-gradient(135deg, rgba(255, 66, 77, 0.35), rgba(200, 40, 50, 0.25));
+    border-color: rgba(255, 66, 77, 0.5);
+    box-shadow: 0 0 14px rgba(255, 66, 77, 0.4);
+}

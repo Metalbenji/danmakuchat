@@ -1,0 +1,19 @@
+/* Kick Module - Event-specific styles */
+.danmaku-item.event.kick.sub,
+.danmaku-item.event.kick.giftsub {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.35), rgba(40, 180, 170, 0.25));
+    border-color: rgba(78, 205, 196, 0.5);
+    box-shadow: 0 0 14px rgba(78, 205, 196, 0.4);
+}
+
+.danmaku-item.event.kick.follow {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.25), rgba(40, 150, 140, 0.2));
+    border-color: rgba(78, 205, 196, 0.4);
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
+}
+
+.danmaku-item.event.kick.giftbomb {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(40, 200, 190, 0.3));
+    border-color: rgba(78, 205, 196, 0.6);
+    box-shadow: 0 0 18px rgba(78, 205, 196, 0.5);
+}

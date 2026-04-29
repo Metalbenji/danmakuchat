@@ -1,0 +1,6 @@
+/* StreamElements Module - Event styles */
+.danmaku-item.event.streamelements {
+    background: linear-gradient(135deg, rgba(98, 197, 78, 0.35), rgba(60, 160, 40, 0.25));
+    border-color: rgba(98, 197, 78, 0.5);
+    box-shadow: 0 0 14px rgba(98, 197, 78, 0.4);
+}

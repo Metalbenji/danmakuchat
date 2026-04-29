@@ -1,0 +1,6 @@
+/* TipeeeStream Module - Event styles */
+.danmaku-item.event.tipeeestream {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.35), rgba(200, 80, 30, 0.25));
+    border-color: rgba(255, 107, 53, 0.5);
+    box-shadow: 0 0 14px rgba(255, 107, 53, 0.4);
+}

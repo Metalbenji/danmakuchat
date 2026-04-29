@@ -1,0 +1,257 @@
+/* ============================================ */
+/*          DANMAKU CHAT - CORE STYLES           */
+/* ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+    /* Transparent background - OBS browser source handles this */
+    background: transparent;
+}
+
+/* ---- Danmaku Layer Container ---- */
+#danmaku-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* ---- Layer variants ---- */
+
+/* Back layer: blurred, more transparent */
+#danmaku-layer.layer-back {
+    filter: blur(1.5px);
+    opacity: 0.7;
+}
+
+/* Middle layer: standard */
+#danmaku-layer.layer-middle {
+    /* No extra effects */
+}
+
+/* Front layer: events - slightly brighter, larger */
+#danmaku-layer.layer-front {
+    /* Events get extra emphasis */
+}
+
+/* ============================================ */
+/*            DANMAKU MESSAGE ITEM              */
+/* ============================================ */
+
+.danmaku-item {
+    position: absolute;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    will-change: transform;
+    animation: danmaku-scroll linear forwards;
+    /* Smooth sub-pixel rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Chat Messages ---- */
+.danmaku-item.chat {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.danmaku-item.chat .danmaku-platform {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.danmaku-item.chat .danmaku-platform img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.danmaku-item.chat .danmaku-badges {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.danmaku-item.chat .danmaku-badges img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+.danmaku-item.chat .danmaku-avatar {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+}
+
+.danmaku-item.chat .danmaku-username {
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 8px currentColor;
+    flex-shrink: 0;
+}
+
+.danmaku-item.chat .danmaku-separator {
+    color: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+.danmaku-item.chat .danmaku-message {
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    word-break: break-word;
+}
+
+.danmaku-item.chat .danmaku-message img.emote {
+    height: 22px;
+    width: auto;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+/* ---- Event Messages (front layer) ---- */
+.danmaku-item.event {
+    background: linear-gradient(135deg, rgba(128, 0, 255, 0.3), rgba(255, 0, 128, 0.3));
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 6px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 12px rgba(128, 0, 255, 0.3);
+}
+
+.danmaku-item.event .danmaku-platform {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.danmaku-item.event .danmaku-platform img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.danmaku-item.event .danmaku-username {
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    flex-shrink: 0;
+}
+
+.danmaku-item.event .danmaku-action {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.danmaku-item.event .danmaku-value {
+    color: #ffdd57;
+    font-weight: 700;
+    flex-shrink: 0;
+    text-shadow: 0 0 8px rgba(255, 221, 87, 0.5);
+}
+
+.danmaku-item.event .danmaku-message {
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.danmaku-item.event .danmaku-message img.emote {
+    height: 24px;
+    width: auto;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+/* ---- Event-specific color themes ---- */
+.danmaku-item.event.twitch { border-color: rgba(145, 70, 255, 0.4); }
+.danmaku-item.event.youtube { border-color: rgba(255, 0, 0, 0.4); }
+.danmaku-item.event.kick { border-color: rgba(78, 205, 196, 0.4); }
+.danmaku-item.event.tiktok { border-color: rgba(255, 0, 80, 0.4); }
+.danmaku-item.event.streamelements { border-color: rgba(98, 197, 78, 0.4); }
+.danmaku-item.event.streamlabs { border-color: rgba(50, 160, 218, 0.4); }
+.danmaku-item.event.patreon { border-color: rgba(255, 66, 77, 0.4); }
+.danmaku-item.event.kofi { border-color: rgba(73, 194, 209, 0.4); }
+.danmaku-item.event.tipeeestream { border-color: rgba(255, 107, 53, 0.4); }
+.danmaku-item.event.fourthwall { border-color: rgba(255, 196, 0, 0.4); }
+
+/* ---- Danmaku Scroll Animation ---- */
+@keyframes danmaku-scroll {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(calc(-100% - 100vw));
+    }
+}
+
+/* ============================================ */
+/*         GRADIENT BACKGROUND OPTION           */
+/* ============================================ */
+
+/* Applied when not in OBS mode (for preview/config) */
+body.preview-mode {
+    background: linear-gradient(180deg, #0a0e27 0%, #1a0a3e 50%, #2d0a4e 100%);
+}
+
+/* ============================================ */
+/*           FONT SIZE SCALING                  */
+/* ============================================ */
+
+body.font-scale-small .danmaku-item.chat { font-size: 13px; }
+body.font-scale-small .danmaku-item.event { font-size: 15px; }
+
+body.font-scale-large .danmaku-item.chat { font-size: 20px; }
+body.font-scale-large .danmaku-item.event { font-size: 22px; }
+
+body.font-scale-xlarge .danmaku-item.chat { font-size: 24px; }
+body.font-scale-xlarge .danmaku-item.event { font-size: 26px; }
+
+/* ============================================ */
+/*            HIDE ELEMENTS                     */
+/* ============================================ */
+
+.danmaku-item .danmaku-platform[style*="display: none"],
+.danmaku-item .danmaku-badges[style*="display: none"],
+.danmaku-item .danmaku-avatar[style*="display: none"] {
+    display: none !important;
+}
+
+/* ============================================ */
+/*           DEBUG MODE                         */
+/* ============================================ */
+
+body.debug-mode #danmaku-layer {
+    outline: 2px dashed rgba(255, 255, 0, 0.3);
+}
+
+body.debug-mode .danmaku-item {
+    outline: 1px solid rgba(255, 255, 0, 0.2);
+}

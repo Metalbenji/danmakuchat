@@ -1,0 +1,28 @@
+/* YouTube Module - Event-specific styles */
+.danmaku-item.event.youtube.superchat {
+    background: linear-gradient(135deg, rgba(255, 0, 0, 0.4), rgba(255, 50, 50, 0.3));
+    border-color: rgba(255, 0, 0, 0.6);
+    box-shadow: 0 0 18px rgba(255, 0, 0, 0.5);
+}
+
+.danmaku-item.event.youtube.sticker {
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.35), rgba(255, 100, 100, 0.25));
+    border-color: rgba(255, 68, 68, 0.5);
+}
+
+.danmaku-item.event.youtube.sponsor {
+    background: linear-gradient(135deg, rgba(0, 184, 212, 0.35), rgba(0, 150, 180, 0.25));
+    border-color: rgba(0, 184, 212, 0.5);
+    box-shadow: 0 0 14px rgba(0, 184, 212, 0.4);
+}
+
+.danmaku-item.event.youtube.giftbomb {
+    background: linear-gradient(135deg, rgba(0, 184, 212, 0.3), rgba(0, 120, 150, 0.2));
+    border-color: rgba(0, 184, 212, 0.4);
+}
+
+/* Badge styles */
+.badge.verified { color: #aaa; }
+.badge.member { color: #ffd700; }
+.badge.mod { color: #5bf; }
+.badge.owner { color: #f44; }

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DanmakuChat - Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css">
+    <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+<div id="container">
+    <div class="wrapper">
+        <div class="header">
+            <h1><i class="fa-solid fa-comments"></i> DanmakuChat</h1>
+            <p class="subtitle">Danmaku / Bullet Chat Overlay for Streamers</p>
+        </div>
+
+        <form id="settings-form">
+
+            <!-- ── Streamer.bot ────────────────────────────────── -->
+            <div class="section" id="section-streamerbot">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><i class="fa-solid fa-robot"></i> Streamer.bot</h2>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="section-body">
+                    <div class="field">
+                        <label>Server Address</label>
+                        <input type="text" name="streamerBotServerAddress" value="127.0.0.1">
+                    </div>
+                    <div class="field">
+                        <label>Port</label>
+                        <input type="text" name="streamerBotServerPort" value="8080">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Layer Settings ──────────────────────────────── -->
+            <div class="section" id="section-layer">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><i class="fa-solid fa-layer-group"></i> Layer Settings</h2>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="section-body">
+                    <div class="field">
+                        <label>
+                            Layer
+                            <small>Which overlay layer this instance renders. Use 3 browser sources in OBS with different layers.</small>
+                        </label>
+                        <select name="layer">
+                            <option value="front">Front (Events + rare chat)</option>
+                            <option value="middle" selected>Middle (Standard chat)</option>
+                            <option value="back">Back (Blurred depth)</option>
+                        </select>
+                    </div>
+
+                    <div class="layer-urls">
+                        <div class="url-box">
+                            <label><i class="fa-solid fa-arrow-up"></i> Front Layer URL</label>
+                            <code id="url-front"></code>
+                        </div>
+                        <div class="url-box">
+                            <label><i class="fa-solid fa-minus"></i> Middle Layer URL</label>
+                            <code id="url-middle"></code>
+                        </div>
+                        <div class="url-box">
+                            <label><i class="fa-solid fa-arrow-down"></i> Back Layer URL</label>
+                            <code id="url-back"></code>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>
+                            Layer Routing: Front Chance
+                            <small>Chance a normal chat message appears on the front layer (default: 2%)</small>
+                        </label>
+                        <input type="range" name="frontChance" min="0" max="0.2" step="0.01" value="0.02">
+                        <em class="range-value">2%</em>
+                    </div>
+                    <div class="field">
+                        <label>
+                            Layer Routing: Back Chance
+                            <small>Chance a normal chat message appears on the back layer (default: 30%)</small>
+                        </label>
+                        <input type="range" name="backChance" min="0" max="1" step="0.05" value="0.3">
+                        <em class="range-value">30%</em>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Danmaku Appearance ──────────────────────────── -->
+            <div class="section" id="section-appearance">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><i class="fa-solid fa-palette"></i> Appearance</h2>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="section-body">
+                    <div class="field">
+                        <label>Font Size</label>
+                        <select name="chatFontSize">
+                            <option value="small">Small</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="large">Large</option>
+                            <option value="xlarge">Extra Large</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Font Family</label>
+                        <input type="text" name="chatFontFamily" value="DM Sans">
+                    </div>
+                    <div class="field">
+                        <label>
+                            Scroll Speed (seconds)
+                            <small>Time for a message to cross the screen</small>
+                        </label>
+                        <input type="range" name="danmakuSpeed" min="3" max="20" step="0.5" value="8">
+                        <em class="range-value">8s</em>
+                    </div>
+                    <div class="field">
+                        <label>
+                            Lane Density (px)
+                            <small>Height of each danmaku lane</small>
+                        </label>
+                        <input type="range" name="danmakuDensity" min="20" max="50" step="2" value="28">
+                        <em class="range-value">28px</em>
+                    </div>
+                    <div class="field">
+                        <label>
+                            Max Danmaku Count
+                            <small>Maximum messages on screen at once</small>
+                        </label>
+                        <input type="number" name="maxDanmaku" value="80" min="10" max="200">
+                    </div>
+                    <hr>
+                    <div class="field">
+                        <label>Platform Icons</label>
+                        <label class="switch"><input type="checkbox" name="showPlatform" checked><span class="slider"></span></label>
+                    </div>
+                    <div class="field">
+                        <label>Badges</label>
+                        <label class="switch"><input type="checkbox" name="showBadges" checked><span class="slider"></span></label>
+                    </div>
+                    <div class="field">
+                        <label>Avatars</label>
+                        <label class="switch"><input type="checkbox" name="showAvatar" checked><span class="slider"></span></label>
+                    </div>
+                    <hr>
+                    <div class="field">
+                        <label>
+                            Back Layer Blur (px)
+                            <small>Blur amount for the back layer</small>
+                        </label>
+                        <input type="range" name="backLayerBlur" min="0" max="5" step="0.5" value="1.5">
+                        <em class="range-value">1.5px</em>
+                    </div>
+                    <div class="field">
+                        <label>
+                            Back Layer Opacity
+                            <small>Opacity for the back layer</small>
+                        </label>
+                        <input type="range" name="backLayerOpacity" min="0.1" max="1" step="0.05" value="0.7">
+                        <em class="range-value">0.7</em>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Filtering ───────────────────────────────────── -->
+            <div class="section" id="section-filtering">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><i class="fa-solid fa-filter"></i> Filtering</h2>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="section-body">
+                    <div class="field">
+                        <label>Ignore Commands (starting with !)</label>
+                        <label class="switch"><input type="checkbox" name="ignoreCommands" checked><span class="slider"></span></label>
+                    </div>
+                    <div class="field">
+                        <label>
+                            Ignore Chatters
+                            <small>Comma-separated names</small>
+                        </label>
+                        <input type="text" name="ignoreChatters" value="Streamlabs,Streamelements">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Platforms ───────────────────────────────────── -->
+            <div class="section" id="section-platforms">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><i class="fa-solid fa-globe"></i> Platforms</h2>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="section-body">
+
+                    <!-- Twitch -->
+                    <div class="platform-block">
+                        <div class="platform-header">
+                            <img src="js/modules/twitch/images/logo-twitch.svg" alt="Twitch">
+                            <span>Twitch</span>
+                            <label class="switch"><input type="checkbox" name="showTwitch" data-toggle="twitch-settings"><span class="slider"></span></label>
+                        </div>
+                        <div class="platform-settings" id="twitch-settings" style="display:none;">
+                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showTwitchMessages" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Follows</label><label class="switch"><input type="checkbox" name="showTwitchFollows" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Bits / Cheers</label><label class="switch"><input type="checkbox" name="showTwitchBits" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showTwitchSubs" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Gifted Subs</label><label class="switch"><input type="checkbox" name="showTwitchGiftedSubs" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Gift Bombs</label><label class="switch"><input type="checkbox" name="showTwitchMassGiftedSubs" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Rewards</label><label class="switch"><input type="checkbox" name="showTwitchRewardRedemptions" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Raids</label><label class="switch"><input type="checkbox" name="showTwitchRaids" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Announcements</label><label class="switch"><input type="checkbox" name="showTwitchAnnouncements" checked><span class="slider"></span></label></div>
+                        </div>
+                    </div>
+
+                    <!-- YouTube -->
+                    <div class="platform-block">
+                        <div class="platform-header">
+                            <img src="js/modules/youtube/images/logo-youtube.svg" alt="YouTube">
+                            <span>YouTube</span>
+                            <label class="switch"><input type="checkbox" name="showYoutube" data-toggle="youtube-settings"><span class="slider"></span></label>
+                        </div>
+                        <div class="platform-settings" id="youtube-settings" style="display:none;">
+                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showYouTubeMessages" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Super Chats</label><label class="switch"><input type="checkbox" name="showYouTubeSuperChats" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Super Stickers</label><label class="switch"><input type="checkbox" name="showYouTubeSuperStickers" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Memberships</label><label class="switch"><input type="checkbox" name="showYouTubeMemberships" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Gifted Memberships</label><label class="switch"><input type="checkbox" name="showYouTubeGiftMemberships" checked><span class="slider"></span></label></div>
+                        </div>
+                    </div>
+
+                    <!-- Kick -->
+                    <div class="platform-block">
+                        <div class="platform-header">
+                            <img src="js/modules/kick/images/logo-kick.svg" alt="Kick">
+                            <span>Kick</span>
+                            <label class="switch"><input type="checkbox" name="showKick" data-toggle="kick-settings"><span class="slider"></span></label>
+                        </div>
+                        <div class="platform-settings" id="kick-settings" style="display:none;">
+                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showKickMessages" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Follows</label><label class="switch"><input type="checkbox" name="showKickFollows" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showKickSubs" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Gifted Subs</label><label class="switch"><input type="checkbox" name="showKickGiftedSubs" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Gift Bombs</label><label class="switch"><input type="checkbox" name="showKickMassGiftedSubs" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Rewards</label><label class="switch"><input type="checkbox" name="showKickRewardRedemptions" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Raids</label><label class="switch"><input type="checkbox" name="showKickRaids" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Gifts</label><label class="switch"><input type="checkbox" name="showKickGifts" checked><span class="slider"></span></label></div>
+                            <p class="platform-note"><i class="fa-solid fa-circle-info"></i> Kick chat uses a direct WebSocket connection in addition to Streamer.bot. Make sure your Kick chatroom ID is configured in Streamer.bot.</p>
+                        </div>
+                    </div>
+
+                    <!-- TikTok -->
+                    <div class="platform-block">
+                        <div class="platform-header">
+                            <img src="js/modules/tiktok/images/logo-tiktok.svg" alt="TikTok">
+                            <span>TikTok</span>
+                            <label class="switch"><input type="checkbox" name="showTiktok" data-toggle="tiktok-settings"><span class="slider"></span></label>
+                        </div>
+                        <div class="platform-settings" id="tiktok-settings" style="display:none;">
+                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showTikTokMessages" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Follows</label><label class="switch"><input type="checkbox" name="showTikTokFollows" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Gifts</label><label class="switch"><input type="checkbox" name="showTikTokGifts" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showTikTokSubs" checked><span class="slider"></span></label></div>
+                            <div class="field"><label>Joins</label><label class="switch"><input type="checkbox" name="showTikTokJoins"><span class="slider"></span></label></div>
+                            <div class="field"><label>Likes</label><label class="switch"><input type="checkbox" name="showTikTokLikes"><span class="slider"></span></label></div>
+                            <div class="field"><label>Shares</label><label class="switch"><input type="checkbox" name="showTikTokShares"><span class="slider"></span></label></div>
+                            <p class="platform-note"><i class="fa-solid fa-circle-info"></i> TikTok requires <a href="https://tikfinity.com" target="_blank">TikFinity</a> running locally (default: ws://localhost:21213) to relay events to this overlay.</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Donation Platforms -->
+                    <h3 class="donation-header"><i class="fa-solid fa-heart"></i> Donation Platforms</h3>
+
+                    <!-- StreamElements -->
+                    <div class="platform-block compact">
+                        <div class="platform-header">
+                            <img src="js/modules/streamelements/images/logo-streamelements.svg" alt="StreamElements">
+                            <span>StreamElements</span>
+                            <label class="switch"><input type="checkbox" name="showStreamelements"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- StreamLabs -->
+                    <div class="platform-block compact">
+                        <div class="platform-header">
+                            <img src="js/modules/streamlabs/images/logo-streamlabs.svg" alt="StreamLabs">
+                            <span>StreamLabs</span>
+                            <label class="switch"><input type="checkbox" name="showStreamlabs"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Patreon -->
+                    <div class="platform-block compact">
+                        <div class="platform-header">
+                            <img src="js/modules/patreon/images/logo-patreon.svg" alt="Patreon">
+                            <span>Patreon</span>
+                            <label class="switch"><input type="checkbox" name="showPatreon"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Ko-fi -->
+                    <div class="platform-block compact">
+                        <div class="platform-header">
+                            <img src="js/modules/kofi/images/logo-kofi.svg" alt="Ko-fi">
+                            <span>Ko-fi</span>
+                            <label class="switch"><input type="checkbox" name="showKofi"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- TipeeeStream -->
+                    <div class="platform-block compact">
+                        <div class="platform-header">
+                            <img src="js/modules/tipeeestream/images/logo-tipeeestream.svg" alt="TipeeeStream">
+                            <span>TipeeeStream</span>
+                            <label class="switch"><input type="checkbox" name="showTipeee"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Fourthwall -->
+                    <div class="platform-block compact">
+                        <div class="platform-header">
+                            <img src="js/modules/fourthwall/images/logo-fourthwall.svg" alt="Fourthwall">
+                            <span>Fourthwall</span>
+                            <label class="switch"><input type="checkbox" name="showFourthwall"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── OBS Setup Guide ─────────────────────────────── -->
+            <div class="section" id="section-obs-guide">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2><i class="fa-solid fa-display"></i> OBS Setup Guide</h2>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="section-body">
+                    <div class="obs-steps">
+                        <div class="step">
+                            <div class="step-num">1</div>
+                            <div class="step-content">
+                                <h4>Add 3 Browser Sources</h4>
+                                <p>In OBS, add <strong>3 Browser Sources</strong> (one for each layer: Front, Middle, Back). Name them "Danmaku Front", "Danmaku Middle", "Danmaku Back".</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">2</div>
+                            <div class="step-content">
+                                <h4>Set the URLs</h4>
+                                <p>Copy the layer URLs above. The <strong>Front</strong> layer goes on top, <strong>Middle</strong> in the middle, <strong>Back</strong> at the bottom of your source list.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">3</div>
+                            <div class="step-content">
+                                <h4>Custom Size</h4>
+                                <p>Set each browser source to the same dimensions (e.g., your full stream resolution). Set <strong>width</strong> and <strong>height</strong> in the browser source properties.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">4</div>
+                            <div class="step-content">
+                                <h4>Transparent Background</h4>
+                                <p>Make sure "Transparent background" is <strong>checked</strong> in each browser source so only the danmaku messages are visible.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script src="js/settings.js"></script>
+</body>
+</html>
