@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const streamelementsModule = true;
-const showStreamelements = getURLParam("showStreamelements", false);
+const showStreamelements = getURLParam("showStreamelements", true);
 const showStreamElementsTips = getURLParam("showStreamElementsTips", true);
 
 const streamElementsHandlers = {

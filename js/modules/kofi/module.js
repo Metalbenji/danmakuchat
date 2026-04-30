@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const kofiModule = true;
-const showKofi = getURLParam("showKofi", false);
+const showKofi = getURLParam("showKofi", true);
 const showKofiSubscriptions = getURLParam("showKofiSubscriptions", true);
 const showKofiDonations = getURLParam("showKofiDonations", true);
 const showKofiOrders = getURLParam("showKofiOrders", true);

@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const tiktokModule = true;
-const showTiktok = getURLParam("showTiktok", false);
+const showTiktok = getURLParam("showTiktok", true);
 const showTikTokMessages = getURLParam("showTikTokMessages", true);
 const showTikTokJoins = getURLParam("showTikTokJoins", false);
 const showTikTokFollows = getURLParam("showTikTokFollows", true);

@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const patreonModule = true;
-const showPatreon = getURLParam("showPatreon", false);
+const showPatreon = getURLParam("showPatreon", true);
 const showPatreonMemberships = getURLParam("showPatreonMemberships", true);
 
 const patreonHandlers = {

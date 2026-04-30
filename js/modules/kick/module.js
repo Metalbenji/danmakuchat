@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const kickModule = true;
-const showKick = getURLParam("showKick", false);
+const showKick = getURLParam("showKick", true);
 const showKickMessages = getURLParam("showKickMessages", true);
 const showKickFollows = getURLParam("showKickFollows", true);
 const showKickSubs = getURLParam("showKickSubs", true);

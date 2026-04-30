@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const fourthwallModule = true;
-const showFourthwall = getURLParam("showFourthwall", false);
+const showFourthwall = getURLParam("showFourthwall", true);
 const showFourthwallDonations = getURLParam("showFourthwallDonations", true);
 const showFourthwallSubscriptions = getURLParam("showFourthwallSubscriptions", true);
 const showFourthwallOrders = getURLParam("showFourthwallOrders", true);

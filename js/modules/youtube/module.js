@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const youtubeModule = true;
-const showYoutube = getURLParam("showYoutube", false);
+const showYoutube = getURLParam("showYoutube", true);
 const showYouTubeMessages = getURLParam("showYouTubeMessages", true);
 const showYouTubeSuperChats = getURLParam("showYouTubeSuperChats", true);
 const showYouTubeSuperStickers = getURLParam("showYouTubeSuperStickers", true);

@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const streamlabsModule = true;
-const showStreamlabs = getURLParam("showStreamlabs", false);
+const showStreamlabs = getURLParam("showStreamlabs", true);
 const showStreamlabsDonations = getURLParam("showStreamlabsDonations", true);
 
 const streamlabsHandlers = {

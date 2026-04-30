@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const tipeeestreamModule = true;
-const showTipeee = getURLParam("showTipeee", false);
+const showTipeee = getURLParam("showTipeee", true);
 const showTipeeeDonations = getURLParam("showTipeeeDonations", true);
 
 const tipeeeHandlers = {

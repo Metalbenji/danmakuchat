@@ -3,7 +3,7 @@
 /* ============================================ */
 
 const twitchModule = true;
-const showTwitch = getURLParam("showTwitch", false);
+const showTwitch = getURLParam("showTwitch", true);
 const showTwitchMessages = getURLParam("showTwitchMessages", true);
 const showTwitchFollows = getURLParam("showTwitchFollows", true);
 const showTwitchBits = getURLParam("showTwitchBits", true);
