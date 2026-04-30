@@ -50,6 +50,7 @@ async function getStreamerInfo() {
 }
 
 function registerPlatformHandlersToStreamerBot(handlers, logPrefix = '') {
+    if (!streamerBotClient) return;
     for (const [event, handler] of Object.entries(handlers)) {
         streamerBotClient.on(event, (...args) => {
             if (logPrefix) {

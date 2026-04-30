@@ -127,7 +127,7 @@ function createDanmakuChat(platform, data) {
     // Message
     html += `<span class="danmaku-message">${data.messageHtml || escapeHTML(data.text || '')}</span>`;
 
-    el.innerHTML = DOMPurify.sanitize(html, {
+    el.innerHTML = safeSanitize(html, {
         ADD_TAGS: ['img'],
         ADD_ATTR: ['src', 'alt', 'title', 'class']
     });
@@ -167,7 +167,7 @@ function createDanmakuEvent(platform, data) {
         html += `<span class="danmaku-message">${data.messageHtml}</span>`;
     }
 
-    el.innerHTML = DOMPurify.sanitize(html, {
+    el.innerHTML = safeSanitize(html, {
         ADD_TAGS: ['img'],
         ADD_ATTR: ['src', 'alt', 'title', 'class']
     });
@@ -265,6 +265,18 @@ window.addEventListener('resize', () => {
     lanes.clear();
 });
 
+// ---- Preview Mode ----
+const isPreview = getURLParam("preview", false);
+if (isPreview) document.body.classList.add('preview-mode');
+
+// ---- DOMPurify fallback ----
+function safeSanitize(html, options) {
+    if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
+        return DOMPurify.sanitize(html, options);
+    }
+    return html;
+}
+
 // ---- Demo Mode (postMessage listener) ----
 const isDemo = getURLParam("demo", false);
 window.addEventListener("message", function(e) {
@@ -309,12 +321,16 @@ if (isDemo) {
     ];
 
     function sendBuiltinDemo() {
-        if (Math.random() < 0.2) {
-            var evt = demoEvents[Math.floor(Math.random() * demoEvents.length)];
-            createDanmakuEvent(evt.platform, { username: evt.username, color: evt.color, action: evt.action });
-        } else {
-            var chat = demoChats[Math.floor(Math.random() * demoChats.length)];
-            createDanmakuChat(chat.platform, { text: chat.text, username: chat.username, color: chat.color });
+        try {
+            if (Math.random() < 0.2) {
+                var evt = demoEvents[Math.floor(Math.random() * demoEvents.length)];
+                createDanmakuEvent(evt.platform, { username: evt.username, color: evt.color, action: evt.action });
+            } else {
+                var chat = demoChats[Math.floor(Math.random() * demoChats.length)];
+                createDanmakuChat(chat.platform, { text: chat.text, username: chat.username, color: chat.color });
+            }
+        } catch (err) {
+            console.warn('[DanmakuChat] Demo error:', err);
         }
     }
 
