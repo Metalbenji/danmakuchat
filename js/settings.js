@@ -844,13 +844,20 @@
   // ─── Generate Overlay URL ──────────────────
   function generateURL(layer, forPreview) {
     var params = new URLSearchParams();
+
+    // ALWAYS include ALL config values so the overlay knows every setting.
+    // Skipping "default" values is fragile — if defaults diverge between
+    // settings.js and danmaku.js, the overlay breaks silently.
     var defaults = DEFAULTS;
     Object.keys(defaults).forEach(function (key) {
-      if (config[key] !== defaults[key]) {
-        params.set(key, String(config[key]));
-      }
+      // Skip preview-only flags for OBS URLs
+      if (!forPreview && (key === 'enableDemo')) return;
+      params.set(key, String(config[key]));
     });
+
+    // Layer always goes last
     params.set('layer', layer);
+
     if (forPreview) {
       params.set('preview', 'true');
       if (config.enableDemo !== false) {
@@ -861,36 +868,26 @@
     }
 
     var basePath = window.location.pathname.replace('settings.html', 'overlay.html');
-    var url = basePath + '?' + params.toString();
 
-    if (!forPreview) {
-      // For OBS: always include server address/port so overlay connects
-      // to the right Streamer.bot instance
-      if (params.get('streamerBotServerAddress') === null) {
-        params.set('streamerBotServerAddress', config.streamerBotServerAddress);
-      }
-      if (params.get('streamerBotServerPort') === null) {
-        params.set('streamerBotServerPort', config.streamerBotServerPort);
-      }
-      url = basePath + '?' + params.toString();
-
-      if (window.location.protocol === 'file:') {
-        // Running from local files — use file:/// path (no Docker needed)
-        // pathname is like "/C:/Users/..." so prefix with "file://" not "file:///"
-        var pathname = window.location.pathname.replace(/\\/g, '/').replace('settings.html', 'overlay.html');
-        url = 'file://' + pathname + '?' + params.toString();
-      } else {
-        // Running from Docker/web server — use http:// URL
-        var host = window.location.hostname;
-        var port = window.location.port;
-        if (config.streamerBotServerAddress && config.streamerBotServerAddress !== '127.0.0.1') {
-          host = config.streamerBotServerAddress;
-        }
-        if (!port) port = '8088';
-        url = 'http://' + host + ':' + port + basePath + '?' + params.toString();
-      }
+    if (window.location.protocol === 'file:' && !forPreview) {
+      // Running from local files — use file:/// path (no Docker needed)
+      var pathname = window.location.pathname.replace(/\\/g, '/').replace('settings.html', 'overlay.html');
+      return 'file://' + pathname + '?' + params.toString();
     }
-    return url;
+
+    if (!forPreview && window.location.protocol !== 'file:') {
+      // Running from Docker/web server — use http:// URL
+      var host = window.location.hostname;
+      var port = window.location.port;
+      if (config.streamerBotServerAddress && config.streamerBotServerAddress !== '127.0.0.1') {
+        host = config.streamerBotServerAddress;
+      }
+      if (!port) port = '8088';
+      return 'http://' + host + ':' + port + basePath + '?' + params.toString();
+    }
+
+    // Preview or file:// preview — use relative path
+    return basePath + '?' + params.toString();
   }
 
   // ─── Update Layer URL Display ──────────────
