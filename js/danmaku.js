@@ -84,7 +84,10 @@ root.setProperty('--dm-font-size', (16 * CFG.fontSize) + 'px');
 root.setProperty('--dm-event-font-size', getEventFontSize());
 root.setProperty('--dm-font-family', CFG.chatFontFamily + ', sans-serif');
 root.setProperty('--dm-font-weight', CFG.fontWeight);
-root.setProperty('--dm-opacity', CFG.danmakuOpacity);
+// Only set opacity when not default — opacity:1 even at full creates a compositing layer that dims text
+if (CFG.danmakuOpacity < 1) {
+    root.setProperty('--dm-opacity', CFG.danmakuOpacity);
+}
 root.setProperty('--dm-gap', CFG.elementGap + 'px');
 root.setProperty('--dm-padding-x', CFG.paddingX + 'px');
 root.setProperty('--dm-padding-y', CFG.paddingY + 'px');
