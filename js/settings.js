@@ -818,6 +818,8 @@
   function onConfigChange() {
     if (refreshTimeout) clearTimeout(refreshTimeout);
     refreshTimeout = setTimeout(function () {
+      // Force iframe reload by invalidating cache key
+      lastPreviewSrc = '';
       refreshPreview();
       updateLayerURLDisplay();
       updateLayerIndicators();
@@ -853,6 +855,8 @@
       params.set('demo', 'true');
     }
     params.set('preview', 'true');
+    // Cache-bust so browser never serves stale overlay.html
+    params.set('_t', String(Date.now()));
 
     var basePath = window.location.pathname.replace('settings.html', 'overlay.html');
     return basePath + '?' + params.toString();
@@ -862,7 +866,12 @@
   function updateLayerURLDisplay() {
     ['front', 'middle', 'back'].forEach(function (layer) {
       var el = document.getElementById('url-' + layer);
-      if (el) el.textContent = generateURL(layer);
+      if (el) {
+        var url = generateURL(layer);
+        // Remove cache-bust param from displayed URL (not needed in OBS)
+        var cleanUrl = url.replace(/[&?]_t=\d+/, '');
+        el.textContent = cleanUrl;
+      }
     });
   }
 
@@ -1222,14 +1231,16 @@
     // Copy OBS URL button
     document.getElementById('btn-export').addEventListener('click', function () {
       var url = generateURL('middle');
-      navigator.clipboard.writeText(url).then(function () {
+      // Remove cache-bust and preview params for OBS URL
+      var obsUrl = url.replace(/[&?]_t=\d+/, '').replace(/[&?]preview=true/, '');
+      navigator.clipboard.writeText(obsUrl).then(function () {
         var btn = document.getElementById('btn-export');
         var origHTML = btn.innerHTML;
         btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> <span class="btn-text">Copied!</span>';
         setTimeout(function () { btn.innerHTML = origHTML; }, 2000);
       }).catch(function () {
         // Fallback
-        prompt('Copy this URL:', url);
+        prompt('Copy this URL:', obsUrl);
       });
     });
 

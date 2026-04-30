@@ -5,67 +5,189 @@
 // ---- Configuration ----
 const isOBS = typeof window.obsstudio !== 'undefined';
 
-const LAYER = getURLParam("layer", "middle"); // front, middle, back
-const showPlatform = getURLParam("showPlatform", true);
-const showBadges = getURLParam("showBadges", true);
-const showAvatar = getURLParam("showAvatar", true);
-const chatFontSize = getURLParam("chatFontSize", "normal"); // small, normal, large, xlarge
-const chatFontFamily = getURLParam("chatFontFamily", "DM Sans");
-const danmakuSpeed = getURLParam("danmakuSpeed", 8); // seconds to cross screen
-const danmakuDensity = getURLParam("danmakuDensity", 28); // lane height in px
-const danmakuOpacity = getURLParam("danmakuOpacity", 1);
-const backLayerBlur = getURLParam("backLayerBlur", 1.5);
-const backLayerOpacity = getURLParam("backLayerOpacity", 0.7);
-const maxDanmaku = getURLParam("maxDanmaku", 80);
-const ignoreCommands = getURLParam("ignoreCommands", true);
-const ignoreChatters = getURLParam("ignoreChatters", "Streamlabs,Streamelements");
-const ignoreUserList = ignoreChatters.split(',').map(item => item.trim().toLowerCase()) || [];
+// Read ALL settings from URL params
+const CFG = {
+    // Layer
+    LAYER: getURLParam("layer", "middle"),
+    // Font
+    fontSize: Number(getURLParam("fontSize", 1)),
+    chatFontFamily: getURLParam("chatFontFamily", "DM Sans"),
+    fontWeight: getURLParam("fontWeight", "normal"),
+    // Background
+    bgColor: getURLParam("bgColor", "#000000"),
+    bgOpacity: Number(getURLParam("bgOpacity", 0)),
+    // Timestamps
+    showTimestamps: getURLParam("showTimestamps", false),
+    use24h: getURLParam("use24h", false),
+    // Direction
+    direction: getURLParam("direction", "left"),
+    // Speed & Density
+    danmakuSpeed: Number(getURLParam("danmakuSpeed", 8)),
+    speedRandomness: Number(getURLParam("speedRandomness", 2)),
+    danmakuDensity: Number(getURLParam("danmakuDensity", 28)),
+    maxDanmaku: Number(getURLParam("maxDanmaku", 80)),
+    // Message Style
+    chatBg: getURLParam("chatBg", "dark"),
+    chatBorder: getURLParam("chatBorder", "subtle"),
+    danmakuOpacity: Number(getURLParam("danmakuOpacity", 1)),
+    textShadow: getURLParam("textShadow", "medium"),
+    // Badges & Avatars
+    showBadges: getURLParam("showBadges", true),
+    showAvatar: getURLParam("showAvatar", true),
+    avatarSize: Number(getURLParam("avatarSize", 20)),
+    showUsername: getURLParam("showUsername", true),
+    showSeparator: getURLParam("showSeparator", true),
+    // Platform Badge
+    platformBadge: getURLParam("platformBadge", "logo"),
+    badgeSize: Number(getURLParam("badgeSize", 1)),
+    // Padding
+    paddingX: Number(getURLParam("paddingX", 12)),
+    paddingY: Number(getURLParam("paddingY", 4)),
+    borderRadius: Number(getURLParam("borderRadius", 5)),
+    elementGap: Number(getURLParam("elementGap", 5)),
+    // Depth & Layers
+    frontChance: Number(getURLParam("frontChance", 0.02)),
+    backChance: Number(getURLParam("backChance", 0.3)),
+    depthEffect: getURLParam("depthEffect", true),
+    depthMinScale: Number(getURLParam("depthMinScale", 0.45)),
+    depthMaxScale: Number(getURLParam("depthMaxScale", 1.3)),
+    depthMinOpacity: Number(getURLParam("depthMinOpacity", 0.3)),
+    depthMaxOpacity: Number(getURLParam("depthMaxOpacity", 1.0)),
+    backLayerBlur: Number(getURLParam("backLayerBlur", 1.5)),
+    backLayerOpacity: Number(getURLParam("backLayerOpacity", 0.7)),
+    frontLayerGlow: getURLParam("frontLayerGlow", true),
+    // Event Messages
+    eventStyle: getURLParam("eventStyle", "solid"),
+    eventOpacity: Number(getURLParam("eventOpacity", 0.7)),
+    eventFontSize: getURLParam("eventFontSize", "slightly-larger"),
+    eventDurationBonus: Number(getURLParam("eventDurationBonus", 2)),
+    eventPaddingX: Number(getURLParam("eventPaddingX", 28)),
+    eventPaddingY: Number(getURLParam("eventPaddingY", 8)),
+    eventLeftPadding: Number(getURLParam("eventLeftPadding", 16)),
+    showEventGlow: getURLParam("showEventGlow", true),
+    eventPlatformColors: getURLParam("eventPlatformColors", true),
+    highlightValueColor: getURLParam("highlightValueColor", "#fbbf24"),
+    // Filtering
+    ignoreCommands: getURLParam("ignoreCommands", true),
+    ignoreChatters: getURLParam("ignoreChatters", "Streamlabs,Streamelements"),
+    minMsgLength: Number(getURLParam("minMsgLength", 0)),
+    maxMsgLength: Number(getURLParam("maxMsgLength", 0)),
+    spamProtection: Number(getURLParam("spamProtection", 0)),
+    hideEmotes: getURLParam("hideEmotes", false),
+};
 
-// Chance-based layer routing (only used on middle layer to know if a message belongs here or back)
-const frontChance = getURLParam("frontChance", 0.02); // 2% chance normal msgs appear on front
-const backChance = getURLParam("backChance", 0.3); // 30% chance normal msgs go to back layer
+const ignoreUserList = (CFG.ignoreChatters || '').split(',').map(item => item.trim().toLowerCase()).filter(Boolean) || [];
+
+// ---- Apply CSS Custom Properties ----
+const root = document.documentElement.style;
+root.setProperty('--dm-font-size', (16 * CFG.fontSize) + 'px');
+root.setProperty('--dm-event-font-size', getEventFontSize());
+root.setProperty('--dm-font-family', CFG.chatFontFamily + ', sans-serif');
+root.setProperty('--dm-font-weight', CFG.fontWeight);
+root.setProperty('--dm-opacity', CFG.danmakuOpacity);
+root.setProperty('--dm-gap', CFG.elementGap + 'px');
+root.setProperty('--dm-padding-x', CFG.paddingX + 'px');
+root.setProperty('--dm-padding-y', CFG.paddingY + 'px');
+root.setProperty('--dm-radius', CFG.borderRadius + 'px');
+root.setProperty('--dm-avatar-size', CFG.avatarSize + 'px');
+root.setProperty('--dm-badge-scale', CFG.badgeSize);
+root.setProperty('--dm-highlight-color', CFG.highlightValueColor);
+root.setProperty('--dm-event-opacity', CFG.eventOpacity);
+root.setProperty('--dm-event-pad-x', CFG.eventPaddingX + 'px');
+root.setProperty('--dm-event-pad-y', CFG.eventPaddingY + 'px');
 
 // ---- Layer Setup ----
 const danmakuLayer = document.getElementById('danmaku-layer');
-danmakuLayer.classList.add(`layer-${LAYER}`);
+danmakuLayer.classList.add('layer-' + CFG.LAYER);
 
-if (LAYER === 'back') {
-    danmakuLayer.style.filter = `blur(${backLayerBlur}px)`;
-    danmakuLayer.style.opacity = backLayerOpacity;
+if (CFG.LAYER === 'back') {
+    danmakuLayer.style.filter = 'blur(' + CFG.backLayerBlur + 'px)';
+    danmakuLayer.style.opacity = CFG.backLayerOpacity;
 }
 
-// Font settings
-document.body.style.fontFamily = chatFontFamily;
-document.body.classList.add(`font-scale-${chatFontSize}`);
+// ---- Apply body-level styles ----
+document.body.style.fontFamily = CFG.chatFontFamily + ', sans-serif';
+document.body.style.fontWeight = CFG.fontWeight;
+
+// Direction class
+if (CFG.direction === 'right') {
+    document.body.classList.add('direction-right');
+    danmakuLayer.classList.add('direction-right');
+}
+
+// Chat background style
+danmakuLayer.setAttribute('data-chat-bg', CFG.chatBg);
+danmakuLayer.setAttribute('data-chat-border', CFG.chatBorder);
+danmakuLayer.setAttribute('data-text-shadow', CFG.textShadow);
+
+// Event style
+danmakuLayer.setAttribute('data-event-style', CFG.eventStyle);
+if (CFG.showEventGlow) {
+    danmakuLayer.classList.add('event-glow');
+} else {
+    danmakuLayer.classList.remove('event-glow');
+}
+
+// Background color/opacity (for preview mode)
+if (CFG.bgOpacity > 0) {
+    document.body.style.background = CFG.bgColor;
+    document.body.style.opacity = 1; // Keep body fully visible
+    danmakuLayer.style.opacity = Math.max(danmakuLayer.style.opacity || 1, CFG.bgOpacity > 0 ? 1 : 1);
+}
+
+// ---- Helper: Get event font size ----
+function getEventFontSize() {
+    var base = 18 * CFG.fontSize;
+    switch (CFG.eventFontSize) {
+        case 'same': return (16 * CFG.fontSize) + 'px';
+        case 'slightly-larger': return base + 'px';
+        case 'larger': return (base * 1.15) + 'px';
+        case 'much-larger': return (base * 1.35) + 'px';
+        default: return base + 'px';
+    }
+}
+
+// ---- Spam Protection ----
+var spamTracker = new Map(); // username -> lastMessageTime
+
+function checkSpamProtection(username) {
+    if (!CFG.spamProtection || CFG.spamProtection <= 0) return false;
+    var now = Date.now();
+    var lastTime = spamTracker.get(username.toLowerCase());
+    if (lastTime && (now - lastTime) < CFG.spamProtection) return true;
+    spamTracker.set(username.toLowerCase(), now);
+    return false;
+}
 
 // ---- Lane Management ----
-let currentLane = 0;
-const lanes = new Map(); // laneIndex -> { element, endTime }
+var currentLane = 0;
+var lanes = new Map(); // laneIndex -> { element, endTime }
 
 function getAvailableLane(duration) {
-    const containerHeight = window.innerHeight;
-    const totalLanes = Math.floor(containerHeight / danmakuDensity);
-    const now = Date.now();
+    var containerHeight = window.innerHeight;
+    var totalLanes = Math.floor(containerHeight / CFG.danmakuDensity);
+    if (totalLanes < 1) totalLanes = 1;
+    var now = Date.now();
 
     // Try the next lane
-    for (let attempts = 0; attempts < totalLanes; attempts++) {
-        const lane = currentLane % totalLanes;
+    for (var attempts = 0; attempts < totalLanes; attempts++) {
+        var lane = currentLane % totalLanes;
         currentLane++;
 
-        const laneData = lanes.get(lane);
+        var laneData = lanes.get(lane);
         if (!laneData || laneData.endTime <= now) {
-            lanes.set(lane, { endTime: now + (duration * 0.3) * 1000 }); // Reserve lane for 30% of animation
+            lanes.set(lane, { endTime: now + (duration * 0.3) * 1000 });
             return lane;
         }
     }
 
     // All lanes busy, find the one that frees up soonest
-    let soonestLane = 0;
-    let soonestEnd = Infinity;
-    for (const [lane, data] of lanes.entries()) {
-        if (data.endTime < soonestEnd) {
-            soonestEnd = data.endTime;
-            soonestLane = lane;
+    var soonestLane = 0;
+    var soonestEnd = Infinity;
+    for (var entry of lanes.entries()) {
+        if (entry[1].endTime < soonestEnd) {
+            soonestEnd = entry[1].endTime;
+            soonestLane = entry[0];
         }
     }
     currentLane = (soonestLane + 1) % totalLanes;
@@ -75,20 +197,41 @@ function getAvailableLane(duration) {
 
 // ---- Layer Routing ----
 function shouldShowMessage(type) {
-    // Events always go to front layer
     if (type === 'event') {
-        return LAYER === 'front';
+        return CFG.LAYER === 'front';
     }
+    if (CFG.LAYER === 'front') {
+        return Math.random() < CFG.frontChance;
+    }
+    if (CFG.LAYER === 'back') {
+        return Math.random() < CFG.backChance;
+    }
+    return Math.random() >= CFG.frontChance;
+}
 
-    // Chat messages are distributed across layers
-    if (LAYER === 'front') {
-        return Math.random() < frontChance;
+// ---- Platform badge HTML ----
+function buildPlatformBadge(platform) {
+    var style = CFG.platformBadge;
+    if (style === 'off') return '';
+    var imgSrc = 'js/modules/' + platform + '/images/logo-' + platform + '.svg';
+    var scale = CFG.badgeSize;
+    if (style === 'logo') {
+        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + Math.round(18 * scale) + 'px;height:' + Math.round(18 * scale) + 'px;"></span>';
     }
-    if (LAYER === 'back') {
-        return Math.random() < backChance;
+    if (style === 'pill') {
+        var colors = { twitch: '#9146ff', youtube: '#ff0000', kick: '#53fc18', tiktok: '#ff0050', streamelements: '#62c54e', streamlabs: '#32a0da', patreon: '#ff424d', kofi: '#49c2d1', tipeeestream: '#ff6b35', fourthwall: '#ffc400' };
+        var color = colors[platform] || '#888';
+        var name = platform.charAt(0).toUpperCase() + platform.slice(1);
+        return '<span class="danmaku-platform danmaku-platform-pill" style="background:' + color + ';font-size:' + Math.round(10 * scale) + 'px;padding:1px 5px;border-radius:4px;color:#fff;font-weight:600;">' + name + '</span>';
     }
-    // Middle layer gets the rest
-    return Math.random() >= frontChance;
+    if (style === 'name') {
+        var name2 = platform.charAt(0).toUpperCase() + platform.slice(1);
+        return '<span class="danmaku-platform danmaku-platform-name" style="font-size:' + Math.round(11 * scale) + 'px;color:rgba(255,255,255,0.6);font-weight:600;">' + name2 + '</span>';
+    }
+    if (style === 'hider') {
+        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="" style="width:' + Math.round(18 * scale) + 'px;height:' + Math.round(18 * scale) + 'px;opacity:0;pointer-events:none;"></span>';
+    }
+    return '';
 }
 
 // ---- Danmaku Creation ----
@@ -96,119 +239,183 @@ function shouldShowMessage(type) {
 function createDanmakuChat(platform, data) {
     if (!shouldShowMessage('chat')) return;
 
-    if (ignoreCommands && data.text && data.text.startsWith('!')) return;
-    if (data.user && ignoreUserList.includes(data.user.toLowerCase())) return;
+    // Filtering
+    if (CFG.ignoreCommands && data.text && data.text.startsWith('!')) return;
+    var username = data.username || data.user || '';
+    if (username && ignoreUserList.includes(username.toLowerCase())) return;
+    if (checkSpamProtection(username)) return;
+    var text = data.text || data.message || '';
+    if (CFG.minMsgLength > 0 && text.length < CFG.minMsgLength) return;
+    if (CFG.maxMsgLength > 0 && text.length > CFG.maxMsgLength) return;
 
-    const el = document.createElement('div');
-    el.className = `danmaku-item chat ${platform}`;
+    var el = document.createElement('div');
+    var cls = 'danmaku-item chat ' + platform;
+    if (CFG.chatBg !== 'dark') cls += ' bg-' + CFG.chatBg;
+    if (CFG.chatBorder !== 'subtle') cls += ' border-' + CFG.chatBorder;
+    el.className = cls;
 
-    let html = '';
+    var html = '';
 
-    // Platform icon
-    if (showPlatform) {
-        html += `<span class="danmaku-platform"><img src="js/modules/${platform}/images/logo-${platform}.svg" alt="${platform}"></span>`;
-    }
+    // Platform badge
+    html += buildPlatformBadge(platform);
 
     // Badges
-    if (showBadges && data.badges) {
-        html += `<span class="danmaku-badges">${data.badges}</span>`;
+    if (CFG.showBadges && data.badges) {
+        html += '<span class="danmaku-badges">' + data.badges + '</span>';
     }
 
     // Avatar
-    if (showAvatar && data.avatar) {
-        html += `<img class="danmaku-avatar" src="${data.avatar}" alt="">`;
+    if (CFG.showAvatar && data.avatar) {
+        html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="">';
     }
 
-    // Username with glow
-    const userColor = data.color || '#fff';
-    html += `<span class="danmaku-username" style="color: ${userColor}">${escapeHTML(data.username)}</span>`;
-    html += `<span class="danmaku-separator">:</span>`;
+    // Username
+    if (CFG.showUsername) {
+        var userColor = data.color || '#fff';
+        html += '<span class="danmaku-username" style="color:' + userColor + '">' + escapeHTML(username) + '</span>';
+    }
+
+    // Separator
+    if (CFG.showSeparator && CFG.showUsername) {
+        html += '<span class="danmaku-separator">:</span>';
+    }
 
     // Message
-    html += `<span class="danmaku-message">${data.messageHtml || escapeHTML(data.text || '')}</span>`;
+    var msgContent = data.messageHtml || (CFG.hideEmotes ? cleanStringOfHTMLButEmotes(text) : escapeHTML(text));
+    if (CFG.hideEmotes && !data.messageHtml) {
+        msgContent = cleanStringOfHTMLButEmotes(text).then ? escapeHTML(text) : cleanStringOfHTMLButEmotes(text);
+    }
+    html += '<span class="danmaku-message">' + msgContent + '</span>';
+
+    // Timestamp
+    if (CFG.showTimestamps) {
+        var now = new Date();
+        var timeStr = CFG.use24h
+            ? now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+            : (now.getHours() % 12 || 12) + ':' + now.getMinutes().toString().padStart(2, '0') + (now.getHours() >= 12 ? ' PM' : ' AM');
+        html += '<span class="danmaku-timestamp">' + timeStr + '</span>';
+    }
 
     el.innerHTML = safeSanitize(html, {
         ADD_TAGS: ['img'],
-        ADD_ATTR: ['src', 'alt', 'title', 'class']
+        ADD_ATTR: ['src', 'alt', 'title', 'class', 'style']
     });
 
-    spawnDanmaku(el);
+    spawnDanmaku(el, false);
 }
 
 function createDanmakuEvent(platform, data) {
     if (!shouldShowMessage('event')) return;
 
-    const el = document.createElement('div');
-    el.className = `danmaku-item event ${platform}`;
+    var el = document.createElement('div');
+    var cls = 'danmaku-item event ' + platform;
+    cls += ' event-style-' + CFG.eventStyle;
+    el.className = cls;
 
-    let html = '';
-
-    // Platform icon
-    if (showPlatform) {
-        html += `<span class="danmaku-platform"><img src="js/modules/${platform}/images/logo-${platform}.svg" alt="${platform}"></span>`;
+    if (!CFG.eventPlatformColors) {
+        el.classList.add('event-no-platform-color');
     }
 
+    var html = '';
+
+    // Platform badge
+    html += buildPlatformBadge(platform);
+
     // Username
-    const userColor = data.color || '#fff';
-    html += `<span class="danmaku-username" style="color: ${userColor}">${escapeHTML(data.username)}</span>`;
+    var userColor = data.color || '#fff';
+    html += '<span class="danmaku-username" style="color:' + userColor + '">' + escapeHTML(data.username || '') + '</span>';
 
     // Action
     if (data.action) {
-        html += `<span class="danmaku-action"> ${data.action} </span>`;
+        html += '<span class="danmaku-action"> ' + escapeHTML(data.action) + ' </span>';
     }
 
-    // Value
+    // Value (use highlight color)
     if (data.value) {
-        html += `<span class="danmaku-value">${data.value}</span>`;
+        html += '<span class="danmaku-value">' + escapeHTML(data.value) + '</span>';
     }
 
     // Message
     if (data.messageHtml) {
-        html += `<span class="danmaku-message">${data.messageHtml}</span>`;
+        html += '<span class="danmaku-message">' + data.messageHtml + '</span>';
+    } else if (data.message) {
+        html += '<span class="danmaku-message">' + escapeHTML(data.message) + '</span>';
     }
 
     el.innerHTML = safeSanitize(html, {
         ADD_TAGS: ['img'],
-        ADD_ATTR: ['src', 'alt', 'title', 'class']
+        ADD_ATTR: ['src', 'alt', 'title', 'class', 'style']
     });
 
-    spawnDanmaku(el);
+    spawnDanmaku(el, true);
 }
 
-function spawnDanmaku(el) {
-    // Remove old items if we exceed max
+function spawnDanmaku(el, isEvent) {
     cullOldDanmaku();
 
-    const duration = danmakuSpeed; // seconds
-    const lane = getAvailableLane(duration);
+    // Calculate duration with randomness
+    var baseDuration = CFG.danmakuSpeed;
+    if (CFG.speedRandomness > 0) {
+        var randomExtra = (Math.random() - 0.5) * 2 * CFG.speedRandomness;
+        baseDuration = Math.max(2, baseDuration + randomExtra);
+    }
+    // Events get extra duration
+    if (isEvent && CFG.eventDurationBonus > 0) {
+        baseDuration += CFG.eventDurationBonus;
+    }
+
+    var lane = getAvailableLane(baseDuration);
+    var isRight = CFG.direction === 'right';
+
+    // Depth effect: random zoom/opacity for chat messages on middle layer
+    // Use 'zoom' instead of transform:scale() to avoid conflicting with scroll animation transform
+    if (CFG.depthEffect && !isEvent && CFG.LAYER === 'middle') {
+        var depthScale = CFG.depthMinScale + Math.random() * (CFG.depthMaxScale - CFG.depthMinScale);
+        var depthOpacity = CFG.depthMinOpacity + Math.random() * (CFG.depthMaxOpacity - CFG.depthMinOpacity);
+        el.style.zoom = depthScale.toFixed(3);
+        el.style.opacity = depthOpacity.toFixed(3);
+    }
 
     // Append to DOM first so offsetWidth is accurate
     el.style.visibility = 'hidden';
     danmakuLayer.appendChild(el);
 
-    el.style.top = `${lane * danmakuDensity}px`;
-    el.style.right = `-${el.offsetWidth + 20}px`;
-    el.style.animationDuration = `${duration}s`;
+    var elWidth = el.offsetWidth;
+    el.style.top = (lane * CFG.danmakuDensity) + 'px';
+    el.style.animationDuration = baseDuration + 's';
+
+    if (isRight) {
+        // Left to right: start off-screen left, scroll right
+        el.style.left = '-' + (elWidth + 20) + 'px';
+        el.style.right = '';
+        el.style.animationName = 'danmaku-scroll-right';
+    } else {
+        // Right to left (default): start off-screen right, scroll left
+        el.style.right = '-' + (elWidth + 20) + 'px';
+        el.style.left = '';
+        el.style.animationName = 'danmaku-scroll';
+    }
+
     el.style.visibility = '';
 
     // Remove after animation completes
-    el.addEventListener('animationend', () => {
+    el.addEventListener('animationend', function() {
         el.remove();
     });
 }
 
 function cullOldDanmaku() {
-    const items = danmakuLayer.querySelectorAll('.danmaku-item');
-    if (items.length >= maxDanmaku) {
-        const toRemove = items.length - maxDanmaku + 10;
-        for (let i = 0; i < toRemove; i++) {
-            items[i]?.remove();
+    var items = danmakuLayer.querySelectorAll('.danmaku-item');
+    if (items.length >= CFG.maxDanmaku) {
+        var toRemove = items.length - CFG.maxDanmaku + 10;
+        for (var i = 0; i < toRemove; i++) {
+            if (items[i]) items[i].remove();
         }
     }
 }
 
 // ---- Utilities ----
-const _escapeDiv = document.createElement('div');
+var _escapeDiv = document.createElement('div');
 function escapeHTML(str) {
     if (!str) return '';
     _escapeDiv.textContent = str;
@@ -217,14 +424,14 @@ function escapeHTML(str) {
 
 function formatNumber(num) {
     if (num >= 1000000) {
-        let n = (num / 1000000).toFixed(1);
+        var n = (num / 1000000).toFixed(1);
         if (n.endsWith('.0')) n = n.slice(0, -2);
         return n + 'M';
     }
     if (num >= 1000) {
-        let n = (num / 1000).toFixed(1);
-        if (n.endsWith('.0')) n = n.slice(0, -2);
-        return n + 'K';
+        var n2 = (num / 1000).toFixed(1);
+        if (n2.endsWith('.0')) n2 = n2.slice(0, -2);
+        return n2 + 'K';
     }
     return num.toString();
 }
@@ -240,36 +447,36 @@ function formatCurrency(amount, currencyCode) {
 }
 
 function formatSubMonthDuration(months) {
-    return `${months} ${months === 1 ? 'month' : 'months'}`;
+    return months + ' ' + (months === 1 ? 'month' : 'months');
 }
 
 function createRandomString(length) {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < length; i++) {
+    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var result = "";
+    for (var i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
 }
 
 async function cleanStringOfHTMLButEmotes(string) {
-    const container = document.createElement('div');
+    var container = document.createElement('div');
     container.innerHTML = string;
-    const emotes = container.querySelectorAll('img.emote[alt]');
-    emotes.forEach(img => {
-        const textNode = document.createTextNode(img.getAttribute('alt'));
+    var emotes = container.querySelectorAll('img.emote[alt]');
+    emotes.forEach(function(img) {
+        var textNode = document.createTextNode(img.getAttribute('alt'));
         img.replaceWith(textNode);
     });
     return container.textContent || "";
 }
 
 // ---- Window resize handler ----
-window.addEventListener('resize', () => {
+window.addEventListener('resize', function() {
     lanes.clear();
 });
 
 // ---- Preview Mode ----
-const isPreview = getURLParam("preview", false);
+var isPreview = getURLParam("preview", false);
 if (isPreview) document.body.classList.add('preview-mode');
 
 // ---- DOMPurify fallback ----
@@ -281,7 +488,7 @@ function safeSanitize(html, options) {
 }
 
 // ---- Demo Mode (postMessage listener) ----
-const isDemo = getURLParam("demo", false);
+var isDemo = getURLParam("demo", false);
 window.addEventListener("message", function(e) {
     if (!e.data || !e.data.__danmakuDemo) return;
     var msg = e.data;
@@ -338,7 +545,6 @@ if (isDemo && !isPreview) {
         }
     }
 
-    // Start demo after a short delay
     setTimeout(sendBuiltinDemo, 500);
     setInterval(sendBuiltinDemo, 1500 + Math.random() * 1500);
 }

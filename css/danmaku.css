@@ -12,8 +12,8 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-family: 'DM Sans', sans-serif;
-    /* Transparent background - OBS browser source handles this */
+    font-family: var(--dm-font-family, 'DM Sans', sans-serif);
+    font-weight: var(--dm-font-weight, normal);
     background: transparent;
 }
 
@@ -30,18 +30,15 @@ html, body {
 
 /* ---- Layer variants ---- */
 
-/* Back layer: blurred, more transparent */
 #danmaku-layer.layer-back {
-    filter: blur(1.5px);
-    opacity: 0.7;
+    filter: blur(var(--dm-back-blur, 1.5px));
+    opacity: var(--dm-back-opacity, 0.7);
 }
 
-/* Middle layer: standard */
 #danmaku-layer.layer-middle {
     /* No extra effects */
 }
 
-/* Front layer: events - slightly brighter, larger */
 #danmaku-layer.layer-front {
     /* Events get extra emphasis */
 }
@@ -55,97 +52,290 @@ html, body {
     white-space: nowrap;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 6px;
+    gap: var(--dm-gap, 6px);
+    padding: var(--dm-padding-y, 4px) var(--dm-padding-x, 12px);
+    border-radius: var(--dm-radius, 6px);
     will-change: transform;
-    animation: danmaku-scroll linear forwards;
-    /* Smooth sub-pixel rendering */
+    animation-name: danmaku-scroll;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    opacity: var(--dm-opacity, 1);
 }
 
-/* ---- Chat Messages ---- */
+/* ============================================ */
+/*            CHAT MESSAGE STYLES               */
+/* ============================================ */
+
+/* ---- Chat Background Variants ---- */
 .danmaku-item.chat {
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    font-size: 16px;
+    font-size: var(--dm-font-size, 16px);
     line-height: 1.4;
 }
 
-.danmaku-item.chat .danmaku-platform {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
+/* Dark glass (default) */
+.danmaku-item.chat,
+.danmaku-item.chat.bg-dark {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
-.danmaku-item.chat .danmaku-platform img {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
+/* Light glass */
+.danmaku-item.chat.bg-light {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
-.danmaku-item.chat .danmaku-badges {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    flex-shrink: 0;
+.danmaku-item.chat.bg-light .danmaku-username {
+    text-shadow: none;
 }
 
-.danmaku-item.chat .danmaku-badges img {
-    width: 16px;
-    height: 16px;
-    object-fit: contain;
+.danmaku-item.chat.bg-light .danmaku-message {
+    color: rgba(0, 0, 0, 0.85);
+    text-shadow: none;
 }
 
-.danmaku-item.chat .danmaku-avatar {
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1.5px solid rgba(255, 255, 255, 0.3);
+.danmaku-item.chat.bg-light .danmaku-separator {
+    color: rgba(0, 0, 0, 0.4);
 }
 
-.danmaku-item.chat .danmaku-username {
-    font-weight: 700;
-    color: #fff;
-    text-shadow: 0 0 8px currentColor;
-    flex-shrink: 0;
+.danmaku-item.chat.bg-light .danmaku-timestamp {
+    color: rgba(0, 0, 0, 0.5);
 }
 
-.danmaku-item.chat .danmaku-separator {
-    color: rgba(255, 255, 255, 0.5);
-    flex-shrink: 0;
+/* Solid dark */
+.danmaku-item.chat.bg-solid {
+    background: rgba(0, 0, 0, 0.85);
 }
 
+/* No background */
+.danmaku-item.chat.bg-none {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* ---- Chat Border Variants ---- */
+/* Default subtle border */
+.danmaku-item.chat.border-subtle {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* No border */
+.danmaku-item.chat.border-none {
+    border: 1px solid transparent;
+}
+
+/* Colored border (platform color) */
+.danmaku-item.chat.border-colored {
+    border: 1px solid transparent;
+}
+
+.danmaku-item.chat.border-colored.twitch { border-color: rgba(145, 70, 255, 0.4); }
+.danmaku-item.chat.border-colored.youtube { border-color: rgba(255, 0, 0, 0.4); }
+.danmaku-item.chat.border-colored.kick { border-color: rgba(83, 252, 24, 0.3); }
+.danmaku-item.chat.border-colored.tiktok { border-color: rgba(255, 0, 80, 0.4); }
+.danmaku-item.chat.border-colored.streamelements { border-color: rgba(98, 197, 78, 0.4); }
+.danmaku-item.chat.border-colored.streamlabs { border-color: rgba(50, 160, 218, 0.4); }
+.danmaku-item.chat.border-colored.patreon { border-color: rgba(255, 66, 77, 0.4); }
+.danmaku-item.chat.border-colored.kofi { border-color: rgba(73, 194, 209, 0.4); }
+.danmaku-item.chat.border-colored.tipeeestream { border-color: rgba(255, 107, 53, 0.4); }
+.danmaku-item.chat.border-colored.fourthwall { border-color: rgba(255, 196, 0, 0.4); }
+
+/* ---- Text Shadow Variants ---- */
+/* Medium (default) */
 .danmaku-item.chat .danmaku-message {
     color: #fff;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     word-break: break-word;
 }
 
-.danmaku-item.chat .danmaku-message img.emote {
+/* None */
+[data-text-shadow="none"] .danmaku-item.chat .danmaku-message,
+[data-text-shadow="none"] .danmaku-item.chat .danmaku-username {
+    text-shadow: none;
+}
+
+/* Light */
+[data-text-shadow="light"] .danmaku-item.chat .danmaku-message {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Heavy */
+[data-text-shadow="heavy"] .danmaku-item.chat .danmaku-message {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- Platform Badge ---- */
+.danmaku-item .danmaku-platform {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.danmaku-item .danmaku-platform img {
+    width: calc(18px * var(--dm-badge-scale, 1));
+    height: calc(18px * var(--dm-badge-scale, 1));
+    object-fit: contain;
+}
+
+.danmaku-item .danmaku-platform-pill {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.danmaku-item .danmaku-platform-name {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* ---- Badges ---- */
+.danmaku-item .danmaku-badges {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.danmaku-item .danmaku-badges img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+/* ---- Avatar ---- */
+.danmaku-item .danmaku-avatar {
+    flex-shrink: 0;
+    width: var(--dm-avatar-size, 20px);
+    height: var(--dm-avatar-size, 20px);
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ---- Username ---- */
+.danmaku-item .danmaku-username {
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 8px currentColor;
+    flex-shrink: 0;
+}
+
+/* ---- Separator ---- */
+.danmaku-item .danmaku-separator {
+    color: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+/* ---- Timestamp ---- */
+.danmaku-item .danmaku-timestamp {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75em;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+/* ---- Message ---- */
+.danmaku-item .danmaku-message img.emote {
     height: 22px;
     width: auto;
     vertical-align: middle;
     display: inline-block;
 }
 
-/* ---- Event Messages (front layer) ---- */
+/* ============================================ */
+/*          EVENT MESSAGE STYLES                */
+/* ============================================ */
+
 .danmaku-item.event {
+    font-size: var(--dm-event-font-size, 18px);
+    font-weight: 600;
+    line-height: 1.4;
+    padding: var(--dm-event-pad-y, 8px) var(--dm-event-pad-x, 28px);
+    opacity: var(--dm-event-opacity, 0.7);
+}
+
+/* ---- Event Style: Solid (default) ---- */
+.danmaku-item.event.event-style-solid {
     background: linear-gradient(135deg, rgba(128, 0, 255, 0.3), rgba(255, 0, 128, 0.3));
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1.4;
-    padding: 6px 16px;
     border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ---- Event Style: Glass ---- */
+.danmaku-item.event.event-style-glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.danmaku-item.event.event-style-glass .danmaku-username {
+    text-shadow: none;
+}
+
+/* ---- Event Style: Bordered ---- */
+.danmaku-item.event.event-style-bordered {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.danmaku-item.event.event-style-bordered .danmaku-username {
+    text-shadow: 0 0 6px currentColor;
+}
+
+/* ---- Event Style: Minimal ---- */
+.danmaku-item.event.event-style-minimal {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    padding: var(--dm-event-pad-y, 4px) 6px;
+}
+
+.danmaku-item.event.event-style-minimal .danmaku-username {
+    text-shadow: none;
+}
+
+/* ---- Event Glow ---- */
+.event-glow .danmaku-item.event.event-style-solid {
     box-shadow: 0 0 12px rgba(128, 0, 255, 0.3);
 }
 
+.event-glow .danmaku-item.event.event-style-glass {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+.event-glow .danmaku-item.event.event-style-bordered {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+}
+
+/* ---- Event platform colors ---- */
+.danmaku-item.event.twitch { border-color: rgba(145, 70, 255, 0.4); }
+.danmaku-item.event.youtube { border-color: rgba(255, 0, 0, 0.4); }
+.danmaku-item.event.kick { border-color: rgba(78, 205, 196, 0.4); }
+.danmaku-item.event.tiktok { border-color: rgba(255, 0, 80, 0.4); }
+.danmaku-item.event.streamelements { border-color: rgba(98, 197, 78, 0.4); }
+.danmaku-item.event.streamlabs { border-color: rgba(50, 160, 218, 0.4); }
+.danmaku-item.event.patreon { border-color: rgba(255, 66, 77, 0.4); }
+.danmaku-item.event.kofi { border-color: rgba(73, 194, 209, 0.4); }
+.danmaku-item.event.tipeeestream { border-color: rgba(255, 107, 53, 0.4); }
+.danmaku-item.event.fourthwall { border-color: rgba(255, 196, 0, 0.4); }
+
+/* No platform colors mode */
+.danmaku-item.event.event-no-platform-color {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ---- Event Elements ---- */
 .danmaku-item.event .danmaku-platform {
     display: flex;
     align-items: center;
@@ -172,7 +362,7 @@ html, body {
 }
 
 .danmaku-item.event .danmaku-value {
-    color: #ffdd57;
+    color: var(--dm-highlight-color, #ffdd57);
     font-weight: 700;
     flex-shrink: 0;
     text-shadow: 0 0 8px rgba(255, 221, 87, 0.5);
@@ -190,19 +380,11 @@ html, body {
     display: inline-block;
 }
 
-/* ---- Event-specific color themes ---- */
-.danmaku-item.event.twitch { border-color: rgba(145, 70, 255, 0.4); }
-.danmaku-item.event.youtube { border-color: rgba(255, 0, 0, 0.4); }
-.danmaku-item.event.kick { border-color: rgba(78, 205, 196, 0.4); }
-.danmaku-item.event.tiktok { border-color: rgba(255, 0, 80, 0.4); }
-.danmaku-item.event.streamelements { border-color: rgba(98, 197, 78, 0.4); }
-.danmaku-item.event.streamlabs { border-color: rgba(50, 160, 218, 0.4); }
-.danmaku-item.event.patreon { border-color: rgba(255, 66, 77, 0.4); }
-.danmaku-item.event.kofi { border-color: rgba(73, 194, 209, 0.4); }
-.danmaku-item.event.tipeeestream { border-color: rgba(255, 107, 53, 0.4); }
-.danmaku-item.event.fourthwall { border-color: rgba(255, 196, 0, 0.4); }
+/* ============================================ */
+/*         SCROLL ANIMATIONS                    */
+/* ============================================ */
 
-/* ---- Danmaku Scroll Animation ---- */
+/* Right to Left (default) */
 @keyframes danmaku-scroll {
     from {
         transform: translateX(0);
@@ -212,36 +394,22 @@ html, body {
     }
 }
 
-/* ============================================ */
-/*         GRADIENT BACKGROUND OPTION           */
-/* ============================================ */
-
-/* Applied when not in OBS mode (for preview/config) */
-body.preview-mode {
-    background: linear-gradient(180deg, #0a0e27 0%, #1a0a3e 50%, #2d0a4e 100%);
+/* Left to Right */
+@keyframes danmaku-scroll-right {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(calc(100% + 100vw));
+    }
 }
 
 /* ============================================ */
-/*           FONT SIZE SCALING                  */
+/*         PREVIEW MODE GRADIENT                */
 /* ============================================ */
 
-body.font-scale-small .danmaku-item.chat { font-size: 13px; }
-body.font-scale-small .danmaku-item.event { font-size: 15px; }
-
-body.font-scale-large .danmaku-item.chat { font-size: 20px; }
-body.font-scale-large .danmaku-item.event { font-size: 22px; }
-
-body.font-scale-xlarge .danmaku-item.chat { font-size: 24px; }
-body.font-scale-xlarge .danmaku-item.event { font-size: 26px; }
-
-/* ============================================ */
-/*            HIDE ELEMENTS                     */
-/* ============================================ */
-
-.danmaku-item .danmaku-platform[style*="display: none"],
-.danmaku-item .danmaku-badges[style*="display: none"],
-.danmaku-item .danmaku-avatar[style*="display: none"] {
-    display: none !important;
+body.preview-mode {
+    background: linear-gradient(180deg, #0a0e27 0%, #1a0a3e 50%, #2d0a4e 100%);
 }
 
 /* ============================================ */
