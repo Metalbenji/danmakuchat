@@ -1,0 +1,7 @@
+services:
+  danmaku-chat:
+    build: .
+    container_name: danmaku-chat
+    ports:
+      - "8088:80"
+    restart: unless-stopped
