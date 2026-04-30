@@ -757,7 +757,7 @@
           '<div class="step"><div class="step-num">3</div><div class="step-content"><h4>Custom Size</h4><p>Set each browser source to the same dimensions (e.g., your full stream resolution). Set <strong>width</strong> and <strong>height</strong> in the browser source properties.</p></div></div>' +
           '<div class="step"><div class="step-num">4</div><div class="step-content"><h4>Transparent Background</h4><p>Make sure "Transparent background" is <strong>checked</strong> in each browser source so only the danmaku messages are visible over your stream.</p></div></div>' +
         '</div>' +
-        '<div class="obs-note"><strong>Tip:</strong> Use the <em>Copy OBS URL</em> button in the header to quickly copy the middle layer URL for the most common setup.</div>' +
+        '<div class="obs-note"><strong>No Docker needed!</strong> Just open <code>settings.html</code> from your local files. The layer URLs will use <code>file:///</code> paths that work directly in OBS browser sources. If you prefer Docker, the URLs will auto-detect and use <code>http://</code> instead.</div>' +
       '</div>';
 
     container.appendChild(sectionEl);
@@ -864,16 +864,20 @@
     var url = basePath + '?' + params.toString();
 
     if (!forPreview) {
-      // For OBS: build absolute URL using the configured server address
-      var host = window.location.hostname;
-      var port = window.location.port;
-      // Use configured server address if different from current page host
-      if (config.streamerBotServerAddress && config.streamerBotServerAddress !== '127.0.0.1') {
-        host = config.streamerBotServerAddress;
+      // For OBS: build an absolute URL
+      if (window.location.protocol === 'file:') {
+        // Running from local files — use file:/// path (no Docker needed)
+        url = 'file:///' + window.location.pathname.replace(/^[A-Za-z]:/, function(m) { return m.toUpperCase(); }).replace('\\', '/').replace('settings.html', 'overlay.html') + '?' + params.toString();
+      } else {
+        // Running from Docker/web server — use http:// URL
+        var host = window.location.hostname;
+        var port = window.location.port;
+        if (config.streamerBotServerAddress && config.streamerBotServerAddress !== '127.0.0.1') {
+          host = config.streamerBotServerAddress;
+        }
+        if (!port) port = '8088';
+        url = 'http://' + host + ':' + port + basePath + '?' + params.toString();
       }
-      // Use 8088 as default port (Docker nginx) if current page isn't on it
-      if (!port) port = '8088';
-      url = 'http://' + host + ':' + port + basePath + '?' + params.toString();
     }
     return url;
   }
