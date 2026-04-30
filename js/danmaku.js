@@ -27,8 +27,8 @@ const CFG = {
     danmakuDensity: Number(getURLParam("danmakuDensity", 28)),
     maxDanmaku: Number(getURLParam("maxDanmaku", 80)),
     // Message Style
-    chatBg: getURLParam("chatBg", "dark"),
-    chatBorder: getURLParam("chatBorder", "subtle"),
+    chatBg: getURLParam("chatBg", "none"),
+    chatBorder: getURLParam("chatBorder", "none"),
     danmakuOpacity: Number(getURLParam("danmakuOpacity", 1)),
     textShadow: getURLParam("textShadow", "medium"),
     // Badges & Avatars
@@ -39,15 +39,15 @@ const CFG = {
     showSeparator: getURLParam("showSeparator", true),
     // Platform Badge
     platformBadge: getURLParam("platformBadge", "logo"),
-    badgeSize: Number(getURLParam("badgeSize", 1)),
+    badgeSize: Number(getURLParam("badgeSize", 1.1)),
     // Padding
     paddingX: Number(getURLParam("paddingX", 12)),
     paddingY: Number(getURLParam("paddingY", 4)),
     borderRadius: Number(getURLParam("borderRadius", 5)),
     elementGap: Number(getURLParam("elementGap", 5)),
     // Depth & Layers
-    frontChance: Number(getURLParam("frontChance", 0.02)),
-    backChance: Number(getURLParam("backChance", 0.3)),
+    frontChance: Number(getURLParam("frontChance", 0.05)),
+    backChance: Number(getURLParam("backChance", 0.4)),
     depthEffect: getURLParam("depthEffect", true),
     depthMinScale: Number(getURLParam("depthMinScale", 0.45)),
     depthMaxScale: Number(getURLParam("depthMaxScale", 1.3)),
@@ -59,7 +59,7 @@ const CFG = {
     // Event Messages
     eventStyle: getURLParam("eventStyle", "solid"),
     eventOpacity: Number(getURLParam("eventOpacity", 0.7)),
-    eventFontSize: getURLParam("eventFontSize", "slightly-larger"),
+    eventFontSize: getURLParam("eventFontSize", "larger"),
     eventDurationBonus: Number(getURLParam("eventDurationBonus", 2)),
     eventPaddingX: Number(getURLParam("eventPaddingX", 28)),
     eventPaddingY: Number(getURLParam("eventPaddingY", 8)),

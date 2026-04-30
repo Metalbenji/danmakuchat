@@ -9,7 +9,7 @@
   // ─── Default Configuration ──────────────────
   const DEFAULTS = {
     // Streamer.bot
-    streamerBotServerAddress: '127.0.0.1',
+    streamerBotServerAddress: '192.168.0.19',
     streamerBotServerPort: '8080',
     // Preview
     enableDemo: true,
@@ -28,8 +28,8 @@
     danmakuDensity: 28,
     maxDanmaku: 80,
     // Appearance - Message Style
-    chatBg: 'dark',
-    chatBorder: 'subtle',
+    chatBg: 'none',
+    chatBorder: 'none',
     danmakuOpacity: 1,
     textShadow: 'medium',
     // Appearance - Badges & Avatars
@@ -40,16 +40,16 @@
     showSeparator: true,
     // Appearance - Platform Badge
     platformBadge: 'logo',
-    badgeSize: 1,
+    badgeSize: 1.1,
     // Appearance - Message Padding
     paddingX: 12,
     paddingY: 4,
     borderRadius: 5,
     elementGap: 5,
     // Depth & Layers
-    layer: 'middle',
-    frontChance: 0.02,
-    backChance: 0.3,
+    layer: 'all',
+    frontChance: 0.05,
+    backChance: 0.4,
     depthEffect: true,
     depthMinScale: 0.45,
     depthMaxScale: 1.3,
@@ -61,7 +61,7 @@
     // Event Messages
     eventStyle: 'solid',
     eventOpacity: 0.7,
-    eventFontSize: 'slightly-larger',
+    eventFontSize: 'larger',
     eventDurationBonus: 2,
     eventPaddingX: 28,
     eventPaddingY: 8,
