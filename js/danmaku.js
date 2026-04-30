@@ -215,21 +215,27 @@ function buildPlatformBadge(platform) {
     if (style === 'off') return '';
     var imgSrc = 'js/modules/' + platform + '/images/logo-' + platform + '.svg';
     var scale = CFG.badgeSize;
+    var colors = {
+        twitch: '#9146ff', youtube: '#ff0000', kick: '#53fc18', tiktok: '#ff0050',
+        streamelements: '#62c54e', streamlabs: '#32a0da', patreon: '#ff424d',
+        kofi: '#49c2d1', tipeeestream: '#ff6b35', fourthwall: '#ffc400'
+    };
+    var color = colors[platform] || '#888';
+    var dotSize = Math.round(8 * scale);
     if (style === 'logo') {
         return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + Math.round(18 * scale) + 'px;height:' + Math.round(18 * scale) + 'px;"></span>';
     }
     if (style === 'pill') {
-        var colors = { twitch: '#9146ff', youtube: '#ff0000', kick: '#53fc18', tiktok: '#ff0050', streamelements: '#62c54e', streamlabs: '#32a0da', patreon: '#ff424d', kofi: '#49c2d1', tipeeestream: '#ff6b35', fourthwall: '#ffc400' };
-        var color = colors[platform] || '#888';
-        var name = platform.charAt(0).toUpperCase() + platform.slice(1);
-        return '<span class="danmaku-platform danmaku-platform-pill" style="background:' + color + ';font-size:' + Math.round(10 * scale) + 'px;padding:1px 5px;border-radius:4px;color:#fff;font-weight:600;">' + name + '</span>';
+        // Platform colored dot
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;"><span style="width:' + dotSize + 'px;height:' + dotSize + 'px;border-radius:50%;background:' + color + ';display:inline-block;flex-shrink:0;"></span></span>';
     }
     if (style === 'name') {
-        var name2 = platform.charAt(0).toUpperCase() + platform.slice(1);
-        return '<span class="danmaku-platform danmaku-platform-name" style="font-size:' + Math.round(11 * scale) + 'px;color:rgba(255,255,255,0.6);font-weight:600;">' + name2 + '</span>';
+        // Platform name text
+        return '<span class="danmaku-platform" style="font-size:' + Math.round(11 * scale) + 'px;font-weight:600;display:inline-flex;align-items:center;flex-shrink:0;color:rgba(255,255,255,0.6);">' + platform + '</span>';
     }
     if (style === 'hider') {
-        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="" style="width:' + Math.round(18 * scale) + 'px;height:' + Math.round(18 * scale) + 'px;opacity:0;pointer-events:none;"></span>';
+        // Platform name in platform color
+        return '<span class="danmaku-platform" style="font-size:' + Math.round(11 * scale) + 'px;font-weight:700;display:inline-flex;align-items:center;flex-shrink:0;color:' + color + ';text-shadow:0 0 6px ' + color + '80;">' + platform + '</span>';
     }
     return '';
 }
