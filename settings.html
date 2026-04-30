@@ -4,378 +4,751 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DanmakuChat - Settings</title>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap">
+
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="css/settings.css">
 </head>
 <body>
-<div id="container">
-    <div class="wrapper">
-        <div class="header">
+<div id="app">
+
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleMobilePanel()" aria-label="Toggle Settings">
+        <i class="fa-solid fa-sliders"></i>
+        Settings
+    </button>
+
+    <!-- Settings Panel (Left) -->
+    <aside id="settings-panel">
+        <div class="panel-header">
             <h1><i class="fa-solid fa-comments"></i> DanmakuChat</h1>
             <p class="subtitle">Danmaku / Bullet Chat Overlay for Streamers</p>
         </div>
 
-        <form id="settings-form">
+        <!-- Quick-jump Navigation -->
+        <nav class="section-nav" aria-label="Section navigation">
+            <button onclick="scrollToSection('section-streamerbot')" title="Streamer.bot"><i class="fa-solid fa-robot"></i></button>
+            <button onclick="scrollToSection('section-general')" title="General"><i class="fa-solid fa-gear"></i></button>
+            <button onclick="scrollToSection('section-appearance')" title="Appearance"><i class="fa-solid fa-palette"></i></button>
+            <button onclick="scrollToSection('section-depth')" title="Depth & Layers"><i class="fa-solid fa-layer-group"></i></button>
+            <button onclick="scrollToSection('section-events')" title="Events"><i class="fa-solid fa-bolt"></i></button>
+            <button onclick="scrollToSection('section-filtering')" title="Filtering"><i class="fa-solid fa-filter"></i></button>
+            <button onclick="scrollToSection('section-platforms')" title="Platforms"><i class="fa-solid fa-globe"></i></button>
+            <button onclick="scrollToSection('section-obs')" title="OBS Guide"><i class="fa-solid fa-display"></i></button>
+        </nav>
 
-            <!-- ── Streamer.bot ────────────────────────────────── -->
-            <div class="section" id="section-streamerbot">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <h2><i class="fa-solid fa-robot"></i> Streamer.bot</h2>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="section-body">
-                    <div class="field">
-                        <label>Server Address</label>
-                        <input type="text" name="streamerBotServerAddress" value="127.0.0.1">
-                    </div>
-                    <div class="field">
-                        <label>Port</label>
-                        <input type="text" name="streamerBotServerPort" value="8080">
-                    </div>
-                </div>
-            </div>
+        <!-- Scrollable Form Body -->
+        <div class="panel-body">
+            <form id="settings-form" autocomplete="off">
 
-            <!-- ── Layer Settings ──────────────────────────────── -->
-            <div class="section" id="section-layer">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <h2><i class="fa-solid fa-layer-group"></i> Layer Settings</h2>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="section-body">
-                    <div class="field">
-                        <label>
-                            Layer
-                            <small>Which overlay layer this instance renders. Use 3 browser sources in OBS with different layers.</small>
-                        </label>
-                        <select name="layer">
-                            <option value="front">Front (Events + rare chat)</option>
-                            <option value="middle" selected>Middle (Standard chat)</option>
-                            <option value="back">Back (Blurred depth)</option>
-                        </select>
+                <!-- ═══════════════════════════════════════ -->
+                <!--           1. STREAMER.BOT               -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-streamerbot">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-robot"></i> Streamer.bot</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
                     </div>
-
-                    <div class="layer-urls">
-                        <div class="url-box">
-                            <label><i class="fa-solid fa-arrow-up"></i> Front Layer URL</label>
-                            <code id="url-front"></code>
+                    <div class="section-body">
+                        <div class="field">
+                            <label>Server Address</label>
+                            <input type="text" name="streamerBotServerAddress" value="127.0.0.1">
                         </div>
-                        <div class="url-box">
-                            <label><i class="fa-solid fa-minus"></i> Middle Layer URL</label>
-                            <code id="url-middle"></code>
+                        <div class="field">
+                            <label>Port</label>
+                            <input type="text" name="streamerBotServerPort" value="8080">
                         </div>
-                        <div class="url-box">
-                            <label><i class="fa-solid fa-arrow-down"></i> Back Layer URL</label>
-                            <code id="url-back"></code>
+                        <div class="connection-status">
+                            <span class="connection-dot" id="sb-status-dot"></span>
+                            <span id="sb-status-text">Not connected</span>
                         </div>
-                    </div>
-
-                    <div class="field">
-                        <label>
-                            Layer Routing: Front Chance
-                            <small>Chance a normal chat message appears on the front layer (default: 2%)</small>
-                        </label>
-                        <input type="range" name="frontChance" min="0" max="0.2" step="0.01" value="0.02">
-                        <em class="range-value">2%</em>
-                    </div>
-                    <div class="field">
-                        <label>
-                            Layer Routing: Back Chance
-                            <small>Chance a normal chat message appears on the back layer (default: 30%)</small>
-                        </label>
-                        <input type="range" name="backChance" min="0" max="1" step="0.05" value="0.3">
-                        <em class="range-value">30%</em>
                     </div>
                 </div>
-            </div>
 
-            <!-- ── Danmaku Appearance ──────────────────────────── -->
-            <div class="section" id="section-appearance">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <h2><i class="fa-solid fa-palette"></i> Appearance</h2>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="section-body">
-                    <div class="field">
-                        <label>Font Size</label>
-                        <select name="chatFontSize">
-                            <option value="small">Small</option>
-                            <option value="normal" selected>Normal</option>
-                            <option value="large">Large</option>
-                            <option value="xlarge">Extra Large</option>
-                        </select>
+                <!-- ═══════════════════════════════════════ -->
+                <!--           2. GENERAL / SETUP            -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-general">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-gear"></i> General / Setup</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
                     </div>
-                    <div class="field">
-                        <label>Font Family</label>
-                        <input type="text" name="chatFontFamily" value="DM Sans">
-                    </div>
-                    <div class="field">
-                        <label>
-                            Scroll Speed (seconds)
-                            <small>Time for a message to cross the screen</small>
-                        </label>
-                        <input type="range" name="danmakuSpeed" min="3" max="20" step="0.5" value="8">
-                        <em class="range-value">8s</em>
-                    </div>
-                    <div class="field">
-                        <label>
-                            Lane Density (px)
-                            <small>Height of each danmaku lane</small>
-                        </label>
-                        <input type="range" name="danmakuDensity" min="20" max="50" step="2" value="28">
-                        <em class="range-value">28px</em>
-                    </div>
-                    <div class="field">
-                        <label>
-                            Max Danmaku Count
-                            <small>Maximum messages on screen at once</small>
-                        </label>
-                        <input type="number" name="maxDanmaku" value="80" min="10" max="200">
-                    </div>
-                    <hr>
-                    <div class="field">
-                        <label>Platform Icons</label>
-                        <label class="switch"><input type="checkbox" name="showPlatform" checked><span class="slider"></span></label>
-                    </div>
-                    <div class="field">
-                        <label>Badges</label>
-                        <label class="switch"><input type="checkbox" name="showBadges" checked><span class="slider"></span></label>
-                    </div>
-                    <div class="field">
-                        <label>Avatars</label>
-                        <label class="switch"><input type="checkbox" name="showAvatar" checked><span class="slider"></span></label>
-                    </div>
-                    <hr>
-                    <div class="field">
-                        <label>
-                            Back Layer Blur (px)
-                            <small>Blur amount for the back layer</small>
-                        </label>
-                        <input type="range" name="backLayerBlur" min="0" max="5" step="0.5" value="1.5">
-                        <em class="range-value">1.5px</em>
-                    </div>
-                    <div class="field">
-                        <label>
-                            Back Layer Opacity
-                            <small>Opacity for the back layer</small>
-                        </label>
-                        <input type="range" name="backLayerOpacity" min="0.1" max="1" step="0.05" value="0.7">
-                        <em class="range-value">0.7</em>
-                    </div>
-                </div>
-            </div>
+                    <div class="section-body">
 
-            <!-- ── Filtering ───────────────────────────────────── -->
-            <div class="section" id="section-filtering">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <h2><i class="fa-solid fa-filter"></i> Filtering</h2>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="section-body">
-                    <div class="field">
-                        <label>Ignore Commands (starting with !)</label>
-                        <label class="switch"><input type="checkbox" name="ignoreCommands" checked><span class="slider"></span></label>
-                    </div>
-                    <div class="field">
-                        <label>
-                            Ignore Chatters
-                            <small>Comma-separated names</small>
-                        </label>
-                        <input type="text" name="ignoreChatters" value="Streamlabs,Streamelements">
-                    </div>
-                </div>
-            </div>
+                        <p class="sub-label">Typography</p>
 
-            <!-- ── Platforms ───────────────────────────────────── -->
-            <div class="section" id="section-platforms">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <h2><i class="fa-solid fa-globe"></i> Platforms</h2>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="section-body">
-
-                    <!-- Twitch -->
-                    <div class="platform-block">
-                        <div class="platform-header">
-                            <img src="js/modules/twitch/images/logo-twitch.svg" alt="Twitch">
-                            <span>Twitch</span>
-                            <label class="switch"><input type="checkbox" name="showTwitch" data-toggle="twitch-settings"><span class="slider"></span></label>
-                        </div>
-                        <div class="platform-settings" id="twitch-settings" style="display:none;">
-                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showTwitchMessages" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Follows</label><label class="switch"><input type="checkbox" name="showTwitchFollows" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Bits / Cheers</label><label class="switch"><input type="checkbox" name="showTwitchBits" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showTwitchSubs" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Gifted Subs</label><label class="switch"><input type="checkbox" name="showTwitchGiftedSubs" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Gift Bombs</label><label class="switch"><input type="checkbox" name="showTwitchMassGiftedSubs" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Rewards</label><label class="switch"><input type="checkbox" name="showTwitchRewardRedemptions" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Raids</label><label class="switch"><input type="checkbox" name="showTwitchRaids" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Announcements</label><label class="switch"><input type="checkbox" name="showTwitchAnnouncements" checked><span class="slider"></span></label></div>
-                        </div>
-                    </div>
-
-                    <!-- YouTube -->
-                    <div class="platform-block">
-                        <div class="platform-header">
-                            <img src="js/modules/youtube/images/logo-youtube.svg" alt="YouTube">
-                            <span>YouTube</span>
-                            <label class="switch"><input type="checkbox" name="showYoutube" data-toggle="youtube-settings"><span class="slider"></span></label>
-                        </div>
-                        <div class="platform-settings" id="youtube-settings" style="display:none;">
-                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showYouTubeMessages" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Super Chats</label><label class="switch"><input type="checkbox" name="showYouTubeSuperChats" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Super Stickers</label><label class="switch"><input type="checkbox" name="showYouTubeSuperStickers" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Memberships</label><label class="switch"><input type="checkbox" name="showYouTubeMemberships" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Gifted Memberships</label><label class="switch"><input type="checkbox" name="showYouTubeGiftMemberships" checked><span class="slider"></span></label></div>
-                        </div>
-                    </div>
-
-                    <!-- Kick -->
-                    <div class="platform-block">
-                        <div class="platform-header">
-                            <img src="js/modules/kick/images/logo-kick.svg" alt="Kick">
-                            <span>Kick</span>
-                            <label class="switch"><input type="checkbox" name="showKick" data-toggle="kick-settings"><span class="slider"></span></label>
-                        </div>
-                        <div class="platform-settings" id="kick-settings" style="display:none;">
-                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showKickMessages" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Follows</label><label class="switch"><input type="checkbox" name="showKickFollows" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showKickSubs" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Gifted Subs</label><label class="switch"><input type="checkbox" name="showKickGiftedSubs" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Gift Bombs</label><label class="switch"><input type="checkbox" name="showKickMassGiftedSubs" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Rewards</label><label class="switch"><input type="checkbox" name="showKickRewardRedemptions" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Raids</label><label class="switch"><input type="checkbox" name="showKickRaids" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Gifts</label><label class="switch"><input type="checkbox" name="showKickGifts" checked><span class="slider"></span></label></div>
-                            <p class="platform-note"><i class="fa-solid fa-circle-info"></i> Kick chat uses a direct WebSocket connection in addition to Streamer.bot. Make sure your Kick chatroom ID is configured in Streamer.bot.</p>
-                        </div>
-                    </div>
-
-                    <!-- TikTok -->
-                    <div class="platform-block">
-                        <div class="platform-header">
-                            <img src="js/modules/tiktok/images/logo-tiktok.svg" alt="TikTok">
-                            <span>TikTok</span>
-                            <label class="switch"><input type="checkbox" name="showTiktok" data-toggle="tiktok-settings"><span class="slider"></span></label>
-                        </div>
-                        <div class="platform-settings" id="tiktok-settings" style="display:none;">
-                            <div class="field"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showTikTokMessages" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Follows</label><label class="switch"><input type="checkbox" name="showTikTokFollows" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Gifts</label><label class="switch"><input type="checkbox" name="showTikTokGifts" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showTikTokSubs" checked><span class="slider"></span></label></div>
-                            <div class="field"><label>Joins</label><label class="switch"><input type="checkbox" name="showTikTokJoins"><span class="slider"></span></label></div>
-                            <div class="field"><label>Likes</label><label class="switch"><input type="checkbox" name="showTikTokLikes"><span class="slider"></span></label></div>
-                            <div class="field"><label>Shares</label><label class="switch"><input type="checkbox" name="showTikTokShares"><span class="slider"></span></label></div>
-                            <p class="platform-note"><i class="fa-solid fa-circle-info"></i> TikTok requires <a href="https://tikfinity.com" target="_blank">TikFinity</a> running locally (default: ws://localhost:21213) to relay events to this overlay.</p>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <!-- Donation Platforms -->
-                    <h3 class="donation-header"><i class="fa-solid fa-heart"></i> Donation Platforms</h3>
-
-                    <!-- StreamElements -->
-                    <div class="platform-block compact">
-                        <div class="platform-header">
-                            <img src="js/modules/streamelements/images/logo-streamelements.svg" alt="StreamElements">
-                            <span>StreamElements</span>
-                            <label class="switch"><input type="checkbox" name="showStreamelements"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                    <!-- StreamLabs -->
-                    <div class="platform-block compact">
-                        <div class="platform-header">
-                            <img src="js/modules/streamlabs/images/logo-streamlabs.svg" alt="StreamLabs">
-                            <span>StreamLabs</span>
-                            <label class="switch"><input type="checkbox" name="showStreamlabs"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                    <!-- Patreon -->
-                    <div class="platform-block compact">
-                        <div class="platform-header">
-                            <img src="js/modules/patreon/images/logo-patreon.svg" alt="Patreon">
-                            <span>Patreon</span>
-                            <label class="switch"><input type="checkbox" name="showPatreon"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                    <!-- Ko-fi -->
-                    <div class="platform-block compact">
-                        <div class="platform-header">
-                            <img src="js/modules/kofi/images/logo-kofi.svg" alt="Ko-fi">
-                            <span>Ko-fi</span>
-                            <label class="switch"><input type="checkbox" name="showKofi"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                    <!-- TipeeeStream -->
-                    <div class="platform-block compact">
-                        <div class="platform-header">
-                            <img src="js/modules/tipeeestream/images/logo-tipeeestream.svg" alt="TipeeeStream">
-                            <span>TipeeeStream</span>
-                            <label class="switch"><input type="checkbox" name="showTipeee"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                    <!-- Fourthwall -->
-                    <div class="platform-block compact">
-                        <div class="platform-header">
-                            <img src="js/modules/fourthwall/images/logo-fourthwall.svg" alt="Fourthwall">
-                            <span>Fourthwall</span>
-                            <label class="switch"><input type="checkbox" name="showFourthwall"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- ── OBS Setup Guide ─────────────────────────────── -->
-            <div class="section" id="section-obs-guide">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <h2><i class="fa-solid fa-display"></i> OBS Setup Guide</h2>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="section-body">
-                    <div class="obs-steps">
-                        <div class="step">
-                            <div class="step-num">1</div>
-                            <div class="step-content">
-                                <h4>Add 3 Browser Sources</h4>
-                                <p>In OBS, add <strong>3 Browser Sources</strong> (one for each layer: Front, Middle, Back). Name them "Danmaku Front", "Danmaku Middle", "Danmaku Back".</p>
+                        <div class="field">
+                            <label>Font Size <small>Base font scale multiplier</small></label>
+                            <div class="range-row">
+                                <input type="range" name="fontSize" min="0.5" max="3" step="0.1" value="1">
+                                <em class="range-value">1</em>
                             </div>
                         </div>
-                        <div class="step">
-                            <div class="step-num">2</div>
-                            <div class="step-content">
-                                <h4>Set the URLs</h4>
-                                <p>Copy the layer URLs above. The <strong>Front</strong> layer goes on top, <strong>Middle</strong> in the middle, <strong>Back</strong> at the bottom of your source list.</p>
+                        <div class="field">
+                            <label>Font Family</label>
+                            <input type="text" name="chatFontFamily" value="DM Sans">
+                        </div>
+                        <div class="field">
+                            <label>Font Weight</label>
+                            <select name="fontWeight">
+                                <option value="normal" selected>Normal</option>
+                                <option value="500">Medium</option>
+                                <option value="600">Semibold</option>
+                                <option value="bold">Bold</option>
+                            </select>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Background</p>
+
+                        <div class="field">
+                            <label>Background Color</label>
+                            <div class="color-input-row">
+                                <div class="color-swatch">
+                                    <input type="color" name="bgColor" value="#000000">
+                                </div>
+                                <span class="color-hex">#000000</span>
                             </div>
                         </div>
-                        <div class="step">
-                            <div class="step-num">3</div>
-                            <div class="step-content">
-                                <h4>Custom Size</h4>
-                                <p>Set each browser source to the same dimensions (e.g., your full stream resolution). Set <strong>width</strong> and <strong>height</strong> in the browser source properties.</p>
+                        <div class="field">
+                            <label>Background Opacity <small>0 = fully transparent (OBS mode)</small></label>
+                            <div class="range-row">
+                                <input type="range" name="bgOpacity" min="0" max="1" step="0.05" value="0">
+                                <em class="range-value">0</em>
                             </div>
                         </div>
-                        <div class="step">
-                            <div class="step-num">4</div>
-                            <div class="step-content">
-                                <h4>Transparent Background</h4>
-                                <p>Make sure "Transparent background" is <strong>checked</strong> in each browser source so only the danmaku messages are visible.</p>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Layout</p>
+
+                        <div class="field field-inline">
+                            <label>Show Timestamps</label>
+                            <label class="switch"><input type="checkbox" name="showTimestamps"><span class="slider"></span></label>
+                        </div>
+                        <div class="field field-inline">
+                            <label>24h Format</label>
+                            <label class="switch"><input type="checkbox" name="use24h"><span class="slider"></span></label>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Direction</p>
+
+                        <div class="field">
+                            <label>Direction <small>Scroll direction for danmaku</small></label>
+                            <select name="direction">
+                                <option value="left" selected>Left to Right</option>
+                                <option value="right">Right to Left</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!--           3. APPEARANCE                 -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-appearance">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-palette"></i> Appearance</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="section-body">
+
+                        <p class="sub-label">Speed & Density</p>
+
+                        <div class="field">
+                            <label>Scroll Speed <small>Seconds to cross screen</small></label>
+                            <div class="range-row">
+                                <input type="range" name="danmakuSpeed" min="3" max="20" step="0.5" value="8">
+                                <em class="range-value">8s</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Speed Randomness <small>Random variation added to speed</small></label>
+                            <div class="range-row">
+                                <input type="range" name="speedRandomness" min="0" max="5" step="0.5" value="2">
+                                <em class="range-value">2s</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Lane Density <small>Height of each danmaku lane (px)</small></label>
+                            <div class="range-row">
+                                <input type="range" name="danmakuDensity" min="20" max="60" step="2" value="28">
+                                <em class="range-value">28px</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Max Danmaku Count <small>Max messages on screen at once</small></label>
+                            <input type="number" name="maxDanmaku" value="80" min="10" max="300">
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Message Style</p>
+
+                        <div class="field">
+                            <label>Chat Background</label>
+                            <select name="chatBg">
+                                <option value="dark" selected>Dark (glass)</option>
+                                <option value="light">Light (glass)</option>
+                                <option value="solid">Solid dark</option>
+                                <option value="none">None / Transparent</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Chat Border</label>
+                            <select name="chatBorder">
+                                <option value="subtle" selected>Subtle</option>
+                                <option value="none">None</option>
+                                <option value="colored">Colored (platform)</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Message Opacity</label>
+                            <div class="range-row">
+                                <input type="range" name="danmakuOpacity" min="0.1" max="1" step="0.05" value="1">
+                                <em class="range-value">1</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Text Shadow Intensity</label>
+                            <select name="textShadow">
+                                <option value="none">None</option>
+                                <option value="light">Light</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="heavy">Heavy</option>
+                            </select>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Badges & Avatars</p>
+
+                        <div class="field field-inline">
+                            <label>Show Badges</label>
+                            <label class="switch"><input type="checkbox" name="showBadges" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="field field-inline">
+                            <label>Show Avatars</label>
+                            <label class="switch"><input type="checkbox" name="showAvatar" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="field">
+                            <label>Avatar Size</label>
+                            <div class="range-row">
+                                <input type="range" name="avatarSize" min="0" max="40" step="2" value="20">
+                                <em class="range-value">20px</em>
+                            </div>
+                        </div>
+                        <div class="field field-inline">
+                            <label>Show Username</label>
+                            <label class="switch"><input type="checkbox" name="showUsername" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="field field-inline">
+                            <label>Show Separator <small>Colon between username and message</small></label>
+                            <label class="switch"><input type="checkbox" name="showSeparator" checked><span class="slider"></span></label>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Platform Badge</p>
+
+                        <div class="field">
+                            <label>Platform Badge Style</label>
+                            <select name="platformBadge">
+                                <option value="logo" selected>Logo</option>
+                                <option value="pill">Pill</option>
+                                <option value="name">Name</option>
+                                <option value="hider">Hider (icon only)</option>
+                                <option value="off">Off</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Badge Size</label>
+                            <div class="range-row">
+                                <input type="range" name="badgeSize" min="0.5" max="2" step="0.1" value="1">
+                                <em class="range-value">1x</em>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Message Padding</p>
+
+                        <div class="field">
+                            <label>Horizontal Padding</label>
+                            <div class="range-row">
+                                <input type="range" name="paddingX" min="2" max="24" step="2" value="12">
+                                <em class="range-value">12px</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Vertical Padding</label>
+                            <div class="range-row">
+                                <input type="range" name="paddingY" min="1" max="12" step="1" value="4">
+                                <em class="range-value">4px</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Border Radius</label>
+                            <div class="range-row">
+                                <input type="range" name="borderRadius" min="0" max="20" step="1" value="5">
+                                <em class="range-value">5px</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Element Gap <small>Spacing between badge, avatar, text</small></label>
+                            <div class="range-row">
+                                <input type="range" name="elementGap" min="0" max="12" step="1" value="5">
+                                <em class="range-value">5px</em>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!--         4. DEPTH & LAYERS              -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-depth">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-layer-group"></i> Depth & Layers</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="section-body">
+
+                        <p class="sub-label">Layer Routing</p>
+
+                        <div class="field">
+                            <label>Preview Layer <small>Layer shown in live preview</small></label>
+                            <select name="layer">
+                                <option value="front">Front (Events + rare chat)</option>
+                                <option value="middle" selected>Middle (Standard chat)</option>
+                                <option value="back">Back (Blurred depth)</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Front Layer Chance <small>% of normal chat on front layer</small></label>
+                            <div class="range-row">
+                                <input type="range" name="frontChance" min="0" max="0.2" step="0.01" value="0.02">
+                                <em class="range-value">2%</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Back Layer Chance <small>% of normal chat on back layer</small></label>
+                            <div class="range-row">
+                                <input type="range" name="backChance" min="0" max="1" step="0.05" value="0.3">
+                                <em class="range-value">30%</em>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Layer URLs <small>Click to copy</small></p>
+
+                        <div class="layer-urls">
+                            <div class="url-box">
+                                <label><i class="fa-solid fa-arrow-up"></i> Front Layer URL</label>
+                                <code id="url-front"></code>
+                                <span class="copy-hint">Click to copy</span>
+                            </div>
+                            <div class="url-box">
+                                <label><i class="fa-solid fa-minus"></i> Middle Layer URL</label>
+                                <code id="url-middle"></code>
+                                <span class="copy-hint">Click to copy</span>
+                            </div>
+                            <div class="url-box">
+                                <label><i class="fa-solid fa-arrow-down"></i> Back Layer URL</label>
+                                <code id="url-back"></code>
+                                <span class="copy-hint">Click to copy</span>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Star-Field Depth Effect</p>
+
+                        <div class="field field-inline">
+                            <label>Depth Effect <small>Vary scale/opacity per message</small></label>
+                            <label class="switch"><input type="checkbox" name="depthEffect" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="field">
+                            <label>Min Scale</label>
+                            <div class="range-row">
+                                <input type="range" name="depthMinScale" min="0.2" max="0.8" step="0.05" value="0.45">
+                                <em class="range-value">0.45</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Max Scale</label>
+                            <div class="range-row">
+                                <input type="range" name="depthMaxScale" min="1" max="1.5" step="0.05" value="1.3">
+                                <em class="range-value">1.3</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Min Opacity</label>
+                            <div class="range-row">
+                                <input type="range" name="depthMinOpacity" min="0.1" max="0.6" step="0.05" value="0.3">
+                                <em class="range-value">0.3</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Max Opacity</label>
+                            <div class="range-row">
+                                <input type="range" name="depthMaxOpacity" min="0.7" max="1" step="0.05" value="1.0">
+                                <em class="range-value">1.0</em>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+                        <p class="sub-label">Back Layer Effects</p>
+
+                        <div class="field">
+                            <label>Back Layer Blur</label>
+                            <div class="range-row">
+                                <input type="range" name="backLayerBlur" min="0" max="5" step="0.5" value="1.5">
+                                <em class="range-value">1.5px</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Back Layer Opacity</label>
+                            <div class="range-row">
+                                <input type="range" name="backLayerOpacity" min="0.1" max="1" step="0.05" value="0.7">
+                                <em class="range-value">0.7</em>
+                            </div>
+                        </div>
+                        <div class="field field-inline">
+                            <label>Front Layer Glow</label>
+                            <label class="switch"><input type="checkbox" name="frontLayerGlow" checked><span class="slider"></span></label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!--         5. EVENT MESSAGES              -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-events">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-bolt"></i> Event Messages</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="section-body">
+
+                        <div class="field">
+                            <label>Event Style</label>
+                            <select name="eventStyle">
+                                <option value="solid" selected>Solid</option>
+                                <option value="glass">Glass</option>
+                                <option value="bordered">Bordered</option>
+                                <option value="minimal">Minimal</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Event Opacity</label>
+                            <div class="range-row">
+                                <input type="range" name="eventOpacity" min="0.3" max="1" step="0.05" value="0.7">
+                                <em class="range-value">0.7</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Event Font Size</label>
+                            <select name="eventFontSize">
+                                <option value="same">Same as chat</option>
+                                <option value="slightly-larger" selected>Slightly larger</option>
+                                <option value="larger">Larger</option>
+                                <option value="much-larger">Much larger</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Event Duration Bonus <small>Extra seconds on screen</small></label>
+                            <div class="range-row">
+                                <input type="range" name="eventDurationBonus" min="0" max="10" step="1" value="2">
+                                <em class="range-value">+2s</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Event Padding X</label>
+                            <div class="range-row">
+                                <input type="range" name="eventPaddingX" min="8" max="40" step="2" value="28">
+                                <em class="range-value">28px</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Event Padding Y</label>
+                            <div class="range-row">
+                                <input type="range" name="eventPaddingY" min="4" max="16" step="1" value="8">
+                                <em class="range-value">8px</em>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Event Left Padding Override <small>Extra padding on the left side</small></label>
+                            <div class="range-row">
+                                <input type="range" name="eventLeftPadding" min="8" max="40" step="2" value="16">
+                                <em class="range-value">16px</em>
+                            </div>
+                        </div>
+                        <div class="field field-inline">
+                            <label>Show Event Glow</label>
+                            <label class="switch"><input type="checkbox" name="showEventGlow" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="field field-inline">
+                            <label>Event Use Platform Colors <small>Border glow matches platform</small></label>
+                            <label class="switch"><input type="checkbox" name="eventPlatformColors" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="field">
+                            <label>Highlight Value Color</label>
+                            <div class="color-input-row">
+                                <div class="color-swatch">
+                                    <input type="color" name="highlightValueColor" value="#fbbf24">
+                                </div>
+                                <span class="color-hex">#fbbf24</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!--           6. FILTERING                  -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-filtering">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-filter"></i> Filtering</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="section-body">
+                        <div class="field field-inline">
+                            <label>Ignore Commands <small>Hide messages starting with !</small></label>
+                            <label class="switch"><input type="checkbox" name="ignoreCommands" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="field">
+                            <label>Ignore Chatters <small>Comma-separated usernames</small></label>
+                            <input type="text" name="ignoreChatters" value="Streamlabs,Streamelements">
+                        </div>
+                        <div class="field">
+                            <label>Min Message Length <small>0 = no minimum</small></label>
+                            <input type="number" name="minMsgLength" value="0" min="0" max="100">
+                        </div>
+                        <div class="field">
+                            <label>Max Message Length <small>0 = no limit</small></label>
+                            <input type="number" name="maxMsgLength" value="0" min="0" max="500">
+                        </div>
+                        <div class="field">
+                            <label>Spam Protection <small>Min ms between messages per user (0 = off)</small></label>
+                            <input type="number" name="spamProtection" value="0" min="0" max="30000" step="500">
+                        </div>
+                        <div class="field field-inline">
+                            <label>Hide Emotes</label>
+                            <label class="switch"><input type="checkbox" name="hideEmotes"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!--           7. PLATFORMS                  -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-platforms">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-globe"></i> Platforms</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="section-body">
+
+                        <!-- Twitch -->
+                        <div class="platform-block">
+                            <div class="platform-header">
+                                <img src="js/modules/twitch/images/logo-twitch.svg" alt="Twitch">
+                                <span>Twitch</span>
+                                <label class="switch"><input type="checkbox" name="showTwitch" data-toggle="twitch-settings"><span class="slider"></span></label>
+                            </div>
+                            <div class="platform-settings" id="twitch-settings" style="display:none;">
+                                <div class="field field-inline"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showTwitchMessages" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Follows</label><label class="switch"><input type="checkbox" name="showTwitchFollows" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Bits / Cheers</label><label class="switch"><input type="checkbox" name="showTwitchBits" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showTwitchSubs" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gifted Subs</label><label class="switch"><input type="checkbox" name="showTwitchGiftedSubs" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gift Bombs</label><label class="switch"><input type="checkbox" name="showTwitchMassGiftedSubs" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Rewards</label><label class="switch"><input type="checkbox" name="showTwitchRewardRedemptions" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Raids</label><label class="switch"><input type="checkbox" name="showTwitchRaids" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Announcements</label><label class="switch"><input type="checkbox" name="showTwitchAnnouncements" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Shared Chat</label><label class="switch"><input type="checkbox" name="showTwitchSharedChat" checked><span class="slider"></span></label></div>
+                            </div>
+                        </div>
+
+                        <!-- YouTube -->
+                        <div class="platform-block">
+                            <div class="platform-header">
+                                <img src="js/modules/youtube/images/logo-youtube.svg" alt="YouTube">
+                                <span>YouTube</span>
+                                <label class="switch"><input type="checkbox" name="showYoutube" data-toggle="youtube-settings"><span class="slider"></span></label>
+                            </div>
+                            <div class="platform-settings" id="youtube-settings" style="display:none;">
+                                <div class="field field-inline"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showYouTubeMessages" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Super Chats</label><label class="switch"><input type="checkbox" name="showYouTubeSuperChats" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Super Stickers</label><label class="switch"><input type="checkbox" name="showYouTubeSuperStickers" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Memberships</label><label class="switch"><input type="checkbox" name="showYouTubeMemberships" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gifted Memberships</label><label class="switch"><input type="checkbox" name="showYouTubeGiftMemberships" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Membership Trains</label><label class="switch"><input type="checkbox" name="showYouTubeMembershipsTrain" checked><span class="slider"></span></label></div>
+                            </div>
+                        </div>
+
+                        <!-- Kick -->
+                        <div class="platform-block">
+                            <div class="platform-header">
+                                <img src="js/modules/kick/images/logo-kick.svg" alt="Kick">
+                                <span>Kick</span>
+                                <label class="switch"><input type="checkbox" name="showKick" data-toggle="kick-settings"><span class="slider"></span></label>
+                            </div>
+                            <div class="platform-settings" id="kick-settings" style="display:none;">
+                                <div class="field field-inline"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showKickMessages" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Follows</label><label class="switch"><input type="checkbox" name="showKickFollows" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showKickSubs" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gifted Subs</label><label class="switch"><input type="checkbox" name="showKickGiftedSubs" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gift Bombs</label><label class="switch"><input type="checkbox" name="showKickMassGiftedSubs" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Rewards</label><label class="switch"><input type="checkbox" name="showKickRewardRedemptions" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Raids</label><label class="switch"><input type="checkbox" name="showKickRaids" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gifts</label><label class="switch"><input type="checkbox" name="showKickGifts" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gift Sub User Train</label><label class="switch"><input type="checkbox" name="showKickGiftedSubsUserTrain" checked><span class="slider"></span></label></div>
+                                <p class="platform-note"><i class="fa-solid fa-circle-info"></i> Kick chat uses a direct WebSocket connection. Configure your chatroom ID in Streamer.bot.</p>
+                            </div>
+                        </div>
+
+                        <!-- TikTok -->
+                        <div class="platform-block">
+                            <div class="platform-header">
+                                <img src="js/modules/tiktok/images/logo-tiktok.svg" alt="TikTok">
+                                <span>TikTok</span>
+                                <label class="switch"><input type="checkbox" name="showTiktok" data-toggle="tiktok-settings"><span class="slider"></span></label>
+                            </div>
+                            <div class="platform-settings" id="tiktok-settings" style="display:none;">
+                                <div class="field field-inline"><label>Chat Messages</label><label class="switch"><input type="checkbox" name="showTikTokMessages" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Follows</label><label class="switch"><input type="checkbox" name="showTikTokFollows" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Gifts</label><label class="switch"><input type="checkbox" name="showTikTokGifts" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Subscriptions</label><label class="switch"><input type="checkbox" name="showTikTokSubs" checked><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Joins</label><label class="switch"><input type="checkbox" name="showTikTokJoins"><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Likes</label><label class="switch"><input type="checkbox" name="showTikTokLikes"><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Shares</label><label class="switch"><input type="checkbox" name="showTikTokShares"><span class="slider"></span></label></div>
+                                <div class="field field-inline"><label>Small Gifts</label><label class="switch"><input type="checkbox" name="showSmallTikTokGifts"><span class="slider"></span></label></div>
+                                <p class="platform-note"><i class="fa-solid fa-circle-info"></i> TikTok requires <a href="https://tikfinity.com" target="_blank">TikFinity</a> running locally (default: ws://localhost:21213).</p>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <h3 class="donation-header"><i class="fa-solid fa-heart"></i> Donation Platforms</h3>
+
+                        <!-- StreamElements -->
+                        <div class="platform-block compact">
+                            <div class="platform-header">
+                                <img src="js/modules/streamelements/images/logo-streamelements.svg" alt="StreamElements">
+                                <span>StreamElements</span>
+                                <label class="switch"><input type="checkbox" name="showStreamelements"><span class="slider"></span></label>
+                            </div>
+                        </div>
+
+                        <!-- StreamLabs -->
+                        <div class="platform-block compact">
+                            <div class="platform-header">
+                                <img src="js/modules/streamlabs/images/logo-streamlabs.svg" alt="StreamLabs">
+                                <span>StreamLabs</span>
+                                <label class="switch"><input type="checkbox" name="showStreamlabs"><span class="slider"></span></label>
+                            </div>
+                        </div>
+
+                        <!-- Patreon -->
+                        <div class="platform-block compact">
+                            <div class="platform-header">
+                                <img src="js/modules/patreon/images/logo-patreon.svg" alt="Patreon">
+                                <span>Patreon</span>
+                                <label class="switch"><input type="checkbox" name="showPatreon"><span class="slider"></span></label>
+                            </div>
+                        </div>
+
+                        <!-- Ko-fi -->
+                        <div class="platform-block compact">
+                            <div class="platform-header">
+                                <img src="js/modules/kofi/images/logo-kofi.svg" alt="Ko-fi">
+                                <span>Ko-fi</span>
+                                <label class="switch"><input type="checkbox" name="showKofi"><span class="slider"></span></label>
+                            </div>
+                        </div>
+
+                        <!-- TipeeeStream -->
+                        <div class="platform-block compact">
+                            <div class="platform-header">
+                                <img src="js/modules/tipeeestream/images/logo-tipeeestream.svg" alt="TipeeeStream">
+                                <span>TipeeeStream</span>
+                                <label class="switch"><input type="checkbox" name="showTipeee"><span class="slider"></span></label>
+                            </div>
+                        </div>
+
+                        <!-- Fourthwall -->
+                        <div class="platform-block compact">
+                            <div class="platform-header">
+                                <img src="js/modules/fourthwall/images/logo-fourthwall.svg" alt="Fourthwall">
+                                <span>Fourthwall</span>
+                                <label class="switch"><input type="checkbox" name="showFourthwall"><span class="slider"></span></label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!--          8. OBS SETUP GUIDE             -->
+                <!-- ═══════════════════════════════════════ -->
+                <div class="section" id="section-obs">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <h2><i class="fa-solid fa-display"></i> OBS Setup Guide</h2>
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="section-body">
+                        <div class="obs-steps">
+                            <div class="step">
+                                <div class="step-num">1</div>
+                                <div class="step-content">
+                                    <h4>Add 3 Browser Sources</h4>
+                                    <p>In OBS, add <strong>3 Browser Sources</strong> (one for each layer: Front, Middle, Back). Name them "Danmaku Front", "Danmaku Middle", "Danmaku Back".</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-num">2</div>
+                                <div class="step-content">
+                                    <h4>Set the URLs</h4>
+                                    <p>Copy the layer URLs from the Depth & Layers section above. The <strong>Front</strong> layer goes on top, <strong>Middle</strong> in the middle, <strong>Back</strong> at the bottom of your source list.</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-num">3</div>
+                                <div class="step-content">
+                                    <h4>Custom Size</h4>
+                                    <p>Set each browser source to the same dimensions (e.g., your full stream resolution). Set <strong>width</strong> and <strong>height</strong> in the browser source properties.</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-num">4</div>
+                                <div class="step-content">
+                                    <h4>Transparent Background</h4>
+                                    <p>Make sure "Transparent background" is <strong>checked</strong> in each browser source so only the danmaku messages are visible over your stream.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-        </form>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Preview Container (Right) -->
+    <div class="preview-container">
+        <span class="preview-label"><i class="fa-solid fa-eye"></i> Live Preview</span>
+        <iframe id="preview-frame" src="overlay.html?demo=true&preview=true&layer=middle" allow="autoplay"></iframe>
     </div>
+
 </div>
 
 <script src="js/settings.js"></script>
