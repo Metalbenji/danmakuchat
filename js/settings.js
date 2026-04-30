@@ -237,9 +237,10 @@
           // Layer Routing
           { key: '_sub_routing', label: 'Layer Routing', type: 'subsection' },
           { key: 'layer', label: 'Preview Layer', type: 'select', tag: 'Preview', options: [
-            { value: 'front', label: 'Front (Events + rare chat)' },
             { value: 'middle', label: 'Middle (Standard chat)' },
+            { value: 'front', label: 'Front (Events + rare chat)' },
             { value: 'back', label: 'Back (Blurred depth)' },
+            { value: 'all', label: 'All Layers (stacked)' },
           ]},
           { key: 'frontChance', label: 'Front Layer Chance', type: 'range', min: 0, max: 0.2, step: 0.01, unit: '%', displayPercent: true },
           { key: 'backChance', label: 'Back Layer Chance', type: 'range', min: 0, max: 1, step: 0.05, unit: '%', displayPercent: true },
@@ -598,9 +599,12 @@
       case 'select':
         el.addEventListener('change', function () {
           config[s.key] = el.value;
+          // Force preview refresh on layer change (different iframe count)
+          if (s.key === 'layer') {
+            lastPreviewSrc = '';
+            updateLayerIndicators();
+          }
           onConfigChange();
-          // If layer changed, update indicators
-          if (s.key === 'layer') updateLayerIndicators();
         });
         break;
     }
@@ -825,12 +829,13 @@
   function updatePreviewStatus() {
     var status = document.querySelector('#preview-status');
     if (!status) return;
+    var layerLabel = config.layer === 'all' ? 'All Layers' : config.layer.charAt(0).toUpperCase() + config.layer.slice(1);
     if (!config.enableDemo) {
       status.innerHTML = '<span class="status-dot paused"></span><span>Demo Off</span>';
     } else if (demoPaused) {
-      status.innerHTML = '<span class="status-dot paused"></span><span>Paused</span>';
+      status.innerHTML = '<span class="status-dot paused"></span><span>Paused · ' + layerLabel + '</span>';
     } else {
-      status.innerHTML = '<span class="status-dot active"></span><span>Live Preview</span>';
+      status.innerHTML = '<span class="status-dot active"></span><span>Live Preview · ' + layerLabel + '</span>';
     }
   }
 
@@ -863,35 +868,97 @@
 
   // ─── Update Layer Indicators ───────────────
   function updateLayerIndicators() {
-    var layerMap = { front: 'frontChance', middle: 'backChance', back: 'depthEffect' };
-    // Show all as active (always visible in overlay mode)
-    ['front', 'middle', 'back'].forEach(function (layer) {
-      var ind = document.getElementById('ind-' + layer);
-      if (ind) ind.className = 'indicator-dot active';
+    var layer = config.layer || 'middle';
+    var isAll = layer === 'all';
+    ['front', 'middle', 'back'].forEach(function(l) {
+      var ind = document.getElementById('ind-' + l);
+      if (ind) {
+        if (isAll || l === layer) {
+          ind.className = 'indicator-dot active';
+        } else {
+          ind.className = 'indicator-dot';
+        }
+      }
     });
   }
 
   // ─── Refresh Preview ───────────────────────
   function refreshPreview() {
-    var previewFrame = document.getElementById('preview-frame');
+    var previewContainer = document.getElementById('preview-container');
     var previewSize = document.getElementById('preview-size');
-    if (!previewFrame) return;
+    if (!previewContainer) return;
 
     var sizeStr = previewSize ? previewSize.value : '1280x720';
     var parts = sizeStr.split('x');
     var w = parseInt(parts[0]) || 1280;
     var h = parseInt(parts[1]) || 720;
 
-    previewFrame.style.width = w + 'px';
-    previewFrame.style.height = h + 'px';
-
     var layer = config.layer || 'middle';
-    var newSrc = generateURL(layer);
+    var isAll = layer === 'all';
 
-    if (newSrc === lastPreviewSrc) return;
-    lastPreviewSrc = newSrc;
+    // Generate a cache key so we don't reload needlessly
+    var layers = isAll ? ['back', 'middle', 'front'] : [layer];
+    var newSrcKey = layers.map(function(l) { return generateURL(l); }).join('|');
+    if (newSrcKey === lastPreviewSrc) {
+      // Just resize existing iframes
+      var frames = previewContainer.querySelectorAll('.preview-iframe');
+      frames.forEach(function(f) { f.style.width = w + 'px'; f.style.height = h + 'px'; });
+      return;
+    }
+    lastPreviewSrc = newSrcKey;
 
-    previewFrame.src = newSrc;
+    // Remove existing preview iframes
+    var oldFrames = previewContainer.querySelectorAll('.preview-iframe');
+    oldFrames.forEach(function(f) { f.remove(); });
+
+    // Remove old wrapper if exists
+    var oldWrapper = previewContainer.querySelector('.preview-stack');
+    if (oldWrapper) oldWrapper.remove();
+
+    if (isAll) {
+      // All-layers mode: stack 3 iframes on top of each other
+      var wrapper = document.createElement('div');
+      wrapper.className = 'preview-stack';
+      wrapper.style.position = 'relative';
+      wrapper.style.width = w + 'px';
+      wrapper.style.height = h + 'px';
+
+      // Layer order: back (bottom) → middle → front (top)
+      var layerOrder = ['back', 'middle', 'front'];
+      layerOrder.forEach(function(l, i) {
+        var iframe = document.createElement('iframe');
+        iframe.id = 'preview-frame-' + l;
+        iframe.className = 'preview-iframe';
+        iframe.src = generateURL(l);
+        iframe.allowTransparency = 'true';
+        iframe.allow = 'autoplay';
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.width = w + 'px';
+        iframe.style.height = h + 'px';
+        iframe.style.border = i === 2 ? '1px solid var(--border)' : 'none';
+        iframe.style.borderRadius = 'var(--radius)';
+        iframe.style.zIndex = i + 1;
+        iframe.style.background = i === 0 ? '#000' : 'transparent';
+        iframe.style.boxShadow = i === 2 ? '0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)' : 'none';
+        iframe.style.transition = 'width 0.3s ease, height 0.3s ease';
+        wrapper.appendChild(iframe);
+      });
+
+      previewContainer.appendChild(wrapper);
+    } else {
+      // Single-layer mode: one iframe (keep id for backwards compat)
+      var iframe = document.createElement('iframe');
+      iframe.id = 'preview-frame';
+      iframe.className = 'preview-iframe';
+      iframe.src = generateURL(layer);
+      iframe.allowTransparency = 'true';
+      iframe.allow = 'autoplay';
+      iframe.style.width = w + 'px';
+      iframe.style.height = h + 'px';
+      previewContainer.appendChild(iframe);
+    }
   }
 
   // ─── Load Settings from URL ────────────────
@@ -909,7 +976,7 @@
     });
 
     var layerParam = params.get('layer');
-    if (layerParam && ['front', 'middle', 'back'].indexOf(layerParam) !== -1) {
+    if (layerParam && ['front', 'middle', 'back', 'all'].indexOf(layerParam) !== -1) {
       config.layer = layerParam;
     }
   }
@@ -1018,22 +1085,35 @@
     { platform: 'tiktok', type: 'sub', username: 'TikTokSub', color: '#ff0050', action: 'subscribed!' },
   ];
 
+  // Helper: get all preview iframes (single or stacked)
+  function getPreviewIframes() {
+    var container = document.getElementById('preview-container');
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.preview-iframe'));
+  }
+
   // danmaku.js already has a postMessage listener — no injection needed
   window.startDemo = function () {
-    var iframe = document.getElementById('preview-frame');
-    if (!iframe || demoPaused || !config.enableDemo) return;
+    if (demoPaused || !config.enableDemo) return;
 
     var attempts = 0;
     var maxAttempts = 30;
 
     function tryInit() {
       attempts++;
-      if (!iframe.contentWindow) {
+      var iframes = getPreviewIframes();
+      if (iframes.length === 0) {
         if (attempts < maxAttempts) setTimeout(tryInit, 300);
         return;
       }
 
-      // danmaku.js message listener is built-in — just start sending
+      // Wait until at least one iframe has contentWindow
+      var ready = iframes.some(function(f) { return f.contentWindow; });
+      if (!ready) {
+        if (attempts < maxAttempts) setTimeout(tryInit, 300);
+        return;
+      }
+
       if (demoActive) return;
       demoActive = true;
       sendDemoMessage();
@@ -1046,8 +1126,8 @@
 
   function sendDemoMessage() {
     if (demoPaused) return;
-    var iframe = document.getElementById('preview-frame');
-    if (!iframe || !iframe.contentWindow) return;
+    var iframes = getPreviewIframes();
+    if (iframes.length === 0) return;
 
     // Randomize next interval
     if (demoInterval) {
@@ -1055,27 +1135,36 @@
       demoInterval = setInterval(sendDemoMessage, 1000 + Math.random() * 2000);
     }
 
-    // 75% chat, 25% event
+    // Build one message
+    var msg;
     if (Math.random() < 0.25) {
       var evt = demoEventMessages[Math.floor(Math.random() * demoEventMessages.length)];
-      var eventData = {
+      msg = {
         __danmakuDemo: true,
         msgType: 'event',
         platform: evt.platform,
         data: { username: evt.username, color: evt.color, action: evt.action }
       };
-      if (evt.value) eventData.data.value = evt.value;
-      if (evt.message) eventData.data.messageHtml = evt.message;
-      iframe.contentWindow.postMessage(eventData, '*');
+      if (evt.value) msg.data.value = evt.value;
+      if (evt.message) msg.data.messageHtml = evt.message;
     } else {
       var chat = demoChatMessages[Math.floor(Math.random() * demoChatMessages.length)];
-      iframe.contentWindow.postMessage({
+      msg = {
         __danmakuDemo: true,
         msgType: 'chat',
         platform: chat.platform,
         data: { text: chat.text, username: chat.username, color: chat.color }
-      }, '*');
+      };
     }
+
+    // Broadcast to all preview iframes
+    iframes.forEach(function(iframe) {
+      try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.postMessage(msg, '*');
+        }
+      } catch(e) { /* ignore cross-origin errors */ }
+    });
   }
 
   // ─── Streamer.bot Connection Status ────────
@@ -1115,11 +1204,10 @@
     var sections = buildSettingsSections();
     renderSections(sections, panelScroll);
 
-    var previewFrame = document.getElementById('preview-frame');
     var previewSize = document.getElementById('preview-size');
 
     // Preview size change
-    previewSize.addEventListener('change', refreshPreview);
+    previewSize.addEventListener('change', function() { lastPreviewSrc = ''; refreshPreview(); });
 
     // Reset button
     document.getElementById('btn-reset').addEventListener('click', function () {
@@ -1176,15 +1264,41 @@
       refreshPreview();
     });
 
-    // iframe load handler
-    previewFrame.addEventListener('load', function () {
-      demoActive = false;
-      if (demoInterval) {
-        clearInterval(demoInterval);
-        demoInterval = null;
+    // iframe load handler — use MutationObserver since iframes are now dynamic
+    var previewContainer = document.getElementById('preview-container');
+    var pendingFrameLoads = 0;
+
+    function onFrameLoaded() {
+      pendingFrameLoads--;
+      if (pendingFrameLoads <= 0) {
+        pendingFrameLoads = 0;
+        demoActive = false;
+        if (demoInterval) {
+          clearInterval(demoInterval);
+          demoInterval = null;
+        }
+        setTimeout(startDemo, 300);
       }
-      setTimeout(startDemo, 300);
+    }
+
+    var iframeObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        mutation.addedNodes.forEach(function(node) {
+          var iframes = [];
+          if (node.tagName === 'IFRAME' && node.classList.contains('preview-iframe')) {
+            iframes.push(node);
+          }
+          if (node.tagName === 'DIV') {
+            iframes = Array.from(node.querySelectorAll('iframe.preview-iframe'));
+          }
+          iframes.forEach(function(iframe) {
+            pendingFrameLoads++;
+            iframe.addEventListener('load', onFrameLoaded);
+          });
+        });
+      });
     });
+    iframeObserver.observe(previewContainer, { childList: true, subtree: true });
 
     // Initial preview
     updateLayerURLDisplay();

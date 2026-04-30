@@ -902,12 +902,29 @@ html, body {
   background-color: #0d0e15;
 }
 
+/* ─── Preview iframes (single + stacked) ─── */
+.preview-iframe {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
 #preview-frame {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #000;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
   transition: width 0.3s ease, height 0.3s ease;
+}
+
+/* Stacked all-layers wrapper */
+.preview-stack {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
 }
 
 /* ─── Layer Indicators ─── */
