@@ -243,7 +243,7 @@ function buildPlatformBadge(platform) {
     if (style === 'hider') {
         // Color name instead of platform name (e.g. "purple platform")
         var colorName = colorNames[platform] || (color + ' platform');
-        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;font-size:' + Math.round(10 * scale) + 'px;font-weight:600;color:' + color + ';">' + colorName + '</span>';
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;background:' + color + ';border-radius:4px;padding:2px 6px;font-size:' + Math.round(10 * scale) + 'px;font-weight:600;color:#fff;">' + colorName + '</span>';
     }
     return '';
 }
