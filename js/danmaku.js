@@ -264,3 +264,61 @@ async function cleanStringOfHTMLButEmotes(string) {
 window.addEventListener('resize', () => {
     lanes.clear();
 });
+
+// ---- Demo Mode (postMessage listener) ----
+const isDemo = getURLParam("demo", false);
+window.addEventListener("message", function(e) {
+    if (!e.data || !e.data.__danmakuDemo) return;
+    var msg = e.data;
+    if (msg.msgType === "chat") {
+        createDanmakuChat(msg.platform, msg.data);
+    } else if (msg.msgType === "event") {
+        createDanmakuEvent(msg.platform, msg.data);
+    }
+});
+
+// Built-in demo messages if ?demo=true is in the URL
+if (isDemo) {
+    var demoChats = [
+        { platform: 'twitch', username: 'NightOwl42', color: '#ff6b6b', text: 'This stream is amazing!' },
+        { platform: 'twitch', username: 'PixelWizard', color: '#9147ff', text: 'LETS GOOO!' },
+        { platform: 'twitch', username: 'StreamQueen', color: '#00bcd4', text: 'First time here, love the vibes' },
+        { platform: 'twitch', username: 'xX_Gamer_Xx', color: '#4caf50', text: 'PogChamp PogChamp' },
+        { platform: 'twitch', username: 'CosmicDust', color: '#e91e63', text: 'How long have you been streaming?' },
+        { platform: 'youtube', username: 'GamerPro99', color: '#ff0000', text: 'Awesome content as always!' },
+        { platform: 'youtube', username: 'TechSavvy', color: '#f44336', text: 'Can you do a tutorial on this?' },
+        { platform: 'youtube', username: 'MusicLover', color: '#e91e63', text: 'This background music is perfect' },
+        { platform: 'kick', username: 'KickFan2024', color: '#53fc18', text: 'Kick streaming is the future!' },
+        { platform: 'kick', username: 'GreenMachine', color: '#8bc34a', text: 'Love the energy on this stream' },
+        { platform: 'tiktok', username: 'TikTokStar', color: '#ff0050', text: 'Going viral for this!' },
+        { platform: 'tiktok', username: 'DanceKing', color: '#ff4081', text: 'Send this to everyone lol' },
+        { platform: 'twitch', username: 'ModeratorBot', color: '#ffd700', text: 'Be nice in chat everyone!' },
+        { platform: 'twitch', username: 'SubHero', color: '#ff9800', text: 'Just subscribed! Keep it up!' },
+        { platform: 'youtube', username: 'LongTimeFan', color: '#795548', text: 'Been watching for 3 years, never disappointed' },
+    ];
+
+    var demoEvents = [
+        { platform: 'twitch', username: 'NewViewer123', color: '#4fc3f7', action: 'followed' },
+        { platform: 'twitch', username: 'GenerousDonor', color: '#ce93d8', action: 'subscribed for 6 months' },
+        { platform: 'twitch', username: 'GiftKing', color: '#ffb74d', action: 'gifted 10 subs!' },
+        { platform: 'youtube', username: 'SuperFan', color: '#f44336', action: 'Super Chatted $5.00' },
+        { platform: 'youtube', username: 'MemberMax', color: '#e91e63', action: 'became a member!' },
+        { platform: 'kick', username: 'KickRaider', color: '#53fc18', action: 'raided with 250 viewers!' },
+        { platform: 'twitch', username: 'CheerLeader', color: '#00e676', action: 'cheered 1000 bits!' },
+        { platform: 'twitch', username: 'MassGiftBot', color: '#ffd740', action: 'gifted 50 subs!' },
+    ];
+
+    function sendBuiltinDemo() {
+        if (Math.random() < 0.2) {
+            var evt = demoEvents[Math.floor(Math.random() * demoEvents.length)];
+            createDanmakuEvent(evt.platform, { username: evt.username, color: evt.color, action: evt.action });
+        } else {
+            var chat = demoChats[Math.floor(Math.random() * demoChats.length)];
+            createDanmakuChat(chat.platform, { text: chat.text, username: chat.username, color: chat.color });
+        }
+    }
+
+    // Start demo after a short delay
+    setTimeout(sendBuiltinDemo, 500);
+    setInterval(sendBuiltinDemo, 1500 + Math.random() * 1500);
+}
