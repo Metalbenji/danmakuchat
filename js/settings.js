@@ -1,510 +1,1216 @@
 /* ============================================ */
-/*        DANMAKU CHAT - SETTINGS LOGIC          */
-/*     Live Preview, Demo Mode, URL Builder      */
+/*   DANMAKU CHAT - SETTINGS LOGIC              */
+/*   Live Preview, Demo Mode, URL Builder      */
 /* ============================================ */
 
 (function () {
-    'use strict';
+  'use strict';
 
-    // ─── Section Toggle ───────────────────────────
-    window.toggleSection = function (header) {
-        const section = header.parentElement;
-        section.classList.toggle('collapsed');
-    };
+  // ─── Default Configuration ──────────────────
+  const DEFAULTS = {
+    // Streamer.bot
+    streamerBotServerAddress: '127.0.0.1',
+    streamerBotServerPort: '8080',
+    // General
+    fontSize: 1,
+    chatFontFamily: 'DM Sans',
+    fontWeight: 'normal',
+    bgColor: '#000000',
+    bgOpacity: 0,
+    showTimestamps: false,
+    use24h: false,
+    direction: 'left',
+    // Appearance - Speed & Density
+    danmakuSpeed: 8,
+    speedRandomness: 2,
+    danmakuDensity: 28,
+    maxDanmaku: 80,
+    // Appearance - Message Style
+    chatBg: 'dark',
+    chatBorder: 'subtle',
+    danmakuOpacity: 1,
+    textShadow: 'medium',
+    // Appearance - Badges & Avatars
+    showBadges: true,
+    showAvatar: true,
+    avatarSize: 20,
+    showUsername: true,
+    showSeparator: true,
+    // Appearance - Platform Badge
+    platformBadge: 'logo',
+    badgeSize: 1,
+    // Appearance - Message Padding
+    paddingX: 12,
+    paddingY: 4,
+    borderRadius: 5,
+    elementGap: 5,
+    // Depth & Layers
+    layer: 'middle',
+    frontChance: 0.02,
+    backChance: 0.3,
+    depthEffect: true,
+    depthMinScale: 0.45,
+    depthMaxScale: 1.3,
+    depthMinOpacity: 0.3,
+    depthMaxOpacity: 1.0,
+    backLayerBlur: 1.5,
+    backLayerOpacity: 0.7,
+    frontLayerGlow: true,
+    // Event Messages
+    eventStyle: 'solid',
+    eventOpacity: 0.7,
+    eventFontSize: 'slightly-larger',
+    eventDurationBonus: 2,
+    eventPaddingX: 28,
+    eventPaddingY: 8,
+    eventLeftPadding: 16,
+    showEventGlow: true,
+    eventPlatformColors: true,
+    highlightValueColor: '#fbbf24',
+    // Filtering
+    ignoreCommands: true,
+    ignoreChatters: 'Streamlabs,Streamelements',
+    minMsgLength: 0,
+    maxMsgLength: 0,
+    spamProtection: 0,
+    hideEmotes: false,
+    // Platforms
+    showTwitch: true,
+    showTwitchMessages: true,
+    showTwitchFollows: true,
+    showTwitchBits: true,
+    showTwitchSubs: true,
+    showTwitchGiftedSubs: true,
+    showTwitchMassGiftedSubs: true,
+    showTwitchRewardRedemptions: true,
+    showTwitchRaids: true,
+    showTwitchAnnouncements: true,
+    showTwitchSharedChat: true,
+    showYoutube: true,
+    showYouTubeMessages: true,
+    showYouTubeSuperChats: true,
+    showYouTubeSuperStickers: true,
+    showYouTubeMemberships: true,
+    showYouTubeGiftMemberships: true,
+    showYouTubeMembershipsTrain: true,
+    showKick: true,
+    showKickMessages: true,
+    showKickFollows: true,
+    showKickSubs: true,
+    showKickGiftedSubs: true,
+    showKickMassGiftedSubs: true,
+    showKickRewardRedemptions: true,
+    showKickRaids: true,
+    showKickGifts: true,
+    showKickGiftedSubsUserTrain: true,
+    showTiktok: true,
+    showTikTokMessages: true,
+    showTikTokFollows: true,
+    showTikTokGifts: true,
+    showTikTokSubs: true,
+    showTikTokJoins: false,
+    showTikTokLikes: false,
+    showTikTokShares: false,
+    showSmallTikTokGifts: true,
+    showStreamelements: true,
+    showStreamlabs: true,
+    showPatreon: true,
+    showKofi: true,
+    showTipeee: true,
+    showFourthwall: true,
+  };
 
-    // ─── Scroll to Section ────────────────────────
-    window.scrollToSection = function (id) {
-        const panelBody = document.querySelector('.panel-body');
-        const section = document.getElementById(id);
-        if (!panelBody || !section) return;
+  let config = { ...DEFAULTS };
+  let refreshTimeout = null;
+  let demoPaused = false;
+  let demoActive = false;
+  let demoInterval = null;
+  let demoHandlerInjected = false;
+  let lastPreviewSrc = '';
 
-        // Ensure section is not collapsed
-        const collapsedState = section.classList.contains('collapsed');
-        if (collapsedState) {
-            const header = section.querySelector('.section-header');
-            if (header) toggleSection(header);
-        }
-
-        // Smooth scroll within the panel body
-        const offset = section.offsetTop - panelBody.offsetTop - 8;
-        panelBody.scrollTo({ top: offset, behavior: 'smooth' });
-    };
-
-    // ─── Mobile Panel Toggle ──────────────────────
-    window.toggleMobilePanel = function () {
-        const panel = document.getElementById('settings-panel');
-        if (panel) panel.classList.toggle('open');
-    };
-
-    // ─── Platform Toggle Show/Hide ────────────────
-    document.querySelectorAll('input[data-toggle]').forEach(function (input) {
-        const targetId = input.getAttribute('data-toggle');
-        const target = document.getElementById(targetId);
-        if (target) {
-            const updateVisibility = function () {
-                target.style.display = input.checked ? 'block' : 'none';
-            };
-            input.addEventListener('change', updateVisibility);
-            updateVisibility();
-        }
-    });
-
-    // ─── Range Value Display Updates ──────────────
-    document.querySelectorAll('input[type="range"]').forEach(function (range) {
-        const valueEl = range.parentElement.querySelector('.range-value');
-        if (!valueEl) return;
-
-        const updateValue = function () {
-            var val = range.value;
-            var name = range.name;
-
-            // Percentage fields
-            if (name === 'frontChance' || name === 'backChance') {
-                valueEl.textContent = Math.round(parseFloat(val) * 100) + '%';
-                return;
-            }
-
-            // Fields with unit suffixes
-            var suffixMap = {
-                'danmakuSpeed': 's',
-                'speedRandomness': 's',
-                'danmakuDensity': 'px',
-                'avatarSize': 'px',
-                'paddingX': 'px',
-                'paddingY': 'px',
-                'borderRadius': 'px',
-                'elementGap': 'px',
-                'backLayerBlur': 'px',
-                'eventPaddingX': 'px',
-                'eventPaddingY': 'px',
-                'eventLeftPadding': 'px',
-                'badgeSize': 'x'
-            };
-            if (suffixMap[name]) {
-                valueEl.textContent = val + suffixMap[name];
-                return;
-            }
-
-            // Duration bonus
-            if (name === 'eventDurationBonus') {
-                valueEl.textContent = '+' + val + 's';
-                return;
-            }
-
-            // Plain number
-            valueEl.textContent = val;
-        };
-
-        range.addEventListener('input', updateValue);
-        updateValue();
-    });
-
-    // ─── Color Input Hex Display ──────────────────
-    document.querySelectorAll('.color-swatch input[type="color"]').forEach(function (input) {
-        const hexEl = input.closest('.color-input-row').querySelector('.color-hex');
-        if (!hexEl) return;
-
-        const updateHex = function () {
-            hexEl.textContent = input.value;
-        };
-
-        input.addEventListener('input', updateHex);
-        updateHex();
-    });
-
-    // ─── Generate Overlay URL ─────────────────────
-    function generateURL(layer) {
-        var form = document.getElementById('settings-form');
-        var params = new URLSearchParams();
-
-        // Collect all form values
-        var elements = form.querySelectorAll('input, select');
-        elements.forEach(function (el) {
-            var name = el.name;
-            if (!name || name === 'layer') return;
-
-            if (el.type === 'checkbox') {
-                params.set(name, el.checked ? 'true' : 'false');
-            } else if (el.type === 'range' || el.type === 'number' || el.type === 'text' || el.tagName === 'SELECT') {
-                var val = el.value;
-                if (val !== '' && val !== undefined) {
-                    params.set(name, val);
-                }
-            }
-        });
-
-        // Override layer
-        params.set('layer', layer);
-        // Enable demo and preview mode
-        params.set('demo', 'true');
-        params.set('preview', 'true');
-
-        var basePath = window.location.pathname.replace('settings.html', 'overlay.html');
-        return basePath + '?' + params.toString();
-    }
-
-    // ─── Update Layer URL Displays ────────────────
-    function updateLayerURLs() {
-        ['front', 'middle', 'back'].forEach(function (layer) {
-            var urlEl = document.getElementById('url-' + layer);
-            if (urlEl) {
-                urlEl.textContent = generateURL(layer);
-            }
-        });
-    }
-
-    // ─── Copy URL on Click ────────────────────────
-    document.querySelectorAll('.url-box code').forEach(function (code) {
-        code.addEventListener('click', async function () {
-            try {
-                await navigator.clipboard.writeText(code.textContent);
-                code.classList.add('copied');
-                setTimeout(function () {
-                    code.classList.remove('copied');
-                }, 600);
-            } catch (e) {
-                // Fallback: select text
-                var range = document.createRange();
-                range.selectNodeContents(code);
-                var sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
-        });
-    });
-
-    // ─── Load Settings from URL Params ────────────
-    function loadSettingsFromURL() {
-        var params = new URLSearchParams(window.location.search);
-        var form = document.getElementById('settings-form');
-
-        params.forEach(function (value, key) {
-            if (key === 'demo' || key === 'preview' || key === 'layer') return;
-
-            var input = form.querySelector('[name="' + key + '"]');
-            if (!input) return;
-
-            if (input.type === 'checkbox') {
-                input.checked = (value === 'true');
-            } else if (input.type === 'range' || input.type === 'number') {
-                input.value = value;
-                input.dispatchEvent(new Event('input'));
-            } else if (input.type === 'color') {
-                input.value = value;
-                input.dispatchEvent(new Event('input'));
-            } else if (input.tagName === 'SELECT') {
-                // Set value if option exists
-                var option = input.querySelector('option[value="' + value + '"]');
-                if (option) {
-                    input.value = value;
-                }
-            } else {
-                input.value = value;
-            }
-        });
-
-        // Also restore the layer select if provided
-        var layerParam = params.get('layer');
-        if (layerParam) {
-            var layerSelect = form.querySelector('[name="layer"]');
-            if (layerSelect) {
-                var layerOption = layerSelect.querySelector('option[value="' + layerParam + '"]');
-                if (layerOption) {
-                    layerSelect.value = layerParam;
-                }
-            }
-        }
-    }
-
-    // ─── Update Preview ───────────────────────────
-    var lastPreviewSrc = '';
-
-    function updatePreview() {
-        var form = document.getElementById('settings-form');
-        var layerSelect = form.querySelector('[name="layer"]');
-        var layer = layerSelect ? layerSelect.value : 'middle';
-        var newSrc = generateURL(layer);
-
-        if (newSrc === lastPreviewSrc) return;
-        lastPreviewSrc = newSrc;
-
-        var iframe = document.getElementById('preview-frame');
-        if (iframe) {
-            iframe.src = newSrc;
-        }
-    }
-
-    // ─── Debounced Preview ────────────────────────
-    var debounceTimer = null;
-
-    function debouncedPreview() {
-        updateLayerURLs();
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(updatePreview, 300);
-    }
-
-    // ─── Wire ALL Form Inputs to Debounced Preview ─
-    (function wireFormListeners() {
-        var form = document.getElementById('settings-form');
-        if (!form) return;
-
-        form.addEventListener('change', function () {
-            debouncedPreview();
-        });
-
-        form.addEventListener('input', function () {
-            debouncedPreview();
-        });
-    })();
-
-    // ─── Streamer.bot Connection Status ───────────
-    (function initConnectionStatus() {
-        var dot = document.getElementById('sb-status-dot');
-        var text = document.getElementById('sb-status-text');
-        if (!dot || !text) return;
-
-        function checkConnection() {
-            var form = document.getElementById('settings-form');
-            var addrInput = form.querySelector('[name="streamerBotServerAddress"]');
-            var portInput = form.querySelector('[name="streamerBotServerPort"]');
-            if (!addrInput || !portInput) return;
-
-            var addr = addrInput.value || '127.0.0.1';
-            var port = portInput.value || '8080';
-            var url = 'http://' + addr + ':' + port + '/GetConnection';
-
-            fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(3000) })
-                .then(function () {
-                    dot.className = 'connection-dot connected';
-                    text.textContent = 'Connected';
-                })
-                .catch(function () {
-                    dot.className = 'connection-dot disconnected';
-                    text.textContent = 'Not connected';
-                });
-        }
-
-        checkConnection();
-        setInterval(checkConnection, 15000);
-
-        // Re-check when address/port changes
-        var form = document.getElementById('settings-form');
-        var addrInput = form.querySelector('[name="streamerBotServerAddress"]');
-        var portInput = form.querySelector('[name="streamerBotServerPort"]');
-        if (addrInput) addrInput.addEventListener('change', checkConnection);
-        if (portInput) portInput.addEventListener('change', checkConnection);
-    })();
-
-    // ═══════════════════════════════════════════════
-    //               DEMO MODE
-    // ═══════════════════════════════════════════════
-
-    // Demo message pools
-    var demoChatMessages = [
-        { platform: 'twitch', username: 'NightOwl42', color: '#ff6b6b', text: 'This stream is amazing!' },
-        { platform: 'twitch', username: 'PixelWizard', color: '#9147ff', text: 'Let\'s gooo!' },
-        { platform: 'twitch', username: 'StreamQueen', color: '#00bcd4', text: 'First time here, love the vibes' },
-        { platform: 'twitch', username: 'xX_Gamer_Xx', color: '#4caf50', text: 'PogChamp PogChamp' },
-        { platform: 'twitch', username: 'CoffeeAndCode', color: '#ff9800', text: 'How long have you been streaming?' },
-        { platform: 'twitch', username: 'MidnightRider', color: '#e91e63', text: 'That play was insane!' },
-        { platform: 'twitch', username: 'ChillVibesOnly', color: '#8bc34a', text: 'just lurking and enjoying the stream' },
-        { platform: 'twitch', username: 'TurboSnail', color: '#03a9f4', text: 'can you play some music?' },
-        { platform: 'twitch', username: 'RNGesusBless', color: '#ffc107', text: 'LETS GOOO' },
-        { platform: 'twitch', username: 'SilentViewer', color: '#cddc39', text: 'lol' },
-        { platform: 'youtube', username: 'GamingPro2024', color: '#ff0000', text: 'Great content as always!' },
-        { platform: 'youtube', username: 'TechEnthusiast', color: '#2196f3', text: 'What settings are you using?' },
-        { platform: 'youtube', username: 'MusicLover', color: '#e91e63', text: 'The background music is perfect' },
-        { platform: 'youtube', username: 'CasualWatcher', color: '#4caf50', text: 'Subscribed!' },
-        { platform: 'youtube', username: 'NightOwlGaming', color: '#ff9800', text: 'Who else is watching at 3am?' },
-        { platform: 'youtube', username: 'PixelArtist', color: '#9c27b0', text: 'That artwork is incredible, keep it up!' },
-        { platform: 'youtube', username: 'JustPassingBy', color: '#00bcd4', text: 'hello from Brazil!' },
-        { platform: 'youtube', username: 'SuperFan99', color: '#f44336', text: 'Been here since day one' },
-        { platform: 'kick', username: 'GreenMachine', color: '#4ecdc4', text: 'Kick is the future!' },
-        { platform: 'kick', username: 'CoolStreamer', color: '#53fc18', text: 'Love this community' },
-        { platform: 'kick', username: 'ChillDude', color: '#4ecdc4', text: 'hey everyone' },
-        { platform: 'kick', username: 'VIPMember', color: '#88c999', text: 'just subbed, this is awesome content' },
-        { platform: 'kick', username: 'ChatLord', color: '#4ecdc4', text: 'spam time W W W W W W' },
-        { platform: 'kick', username: 'NewHere', color: '#98d9b0', text: 'first stream on kick,推荐 this平台' },
-        { platform: 'tiktok', username: 'FYP Legend', color: '#ff0050', text: 'saw this on my fyp!' },
-        { platform: 'tiktok', username: 'vibe.check', color: '#25f4ee', text: 'no cap this is fire' },
-        { platform: 'tiktok', username: 'clout chaser', color: '#ff0050', text: 'follow me back plz' },
-        { platform: 'tiktok', username: 'lol king', color: '#fe2c55', text: '💀💀💀' },
-        { platform: 'tiktok', username: 'random user', color: '#25f4ee', text: 'POV: you found the best live' },
-        { platform: 'tiktok', username: 'shadow lurker', color: '#ff0050', text: 'im just watching quietly' },
+  // ─── Build Settings Sections ────────────────
+  function buildSettingsSections() {
+    return [
+      {
+        id: 'section-streamerbot',
+        title: 'Streamer.bot',
+        icon: '🔌',
+        settings: [
+          { key: 'streamerBotServerAddress', label: 'Server Address', type: 'text', placeholder: '127.0.0.1' },
+          { key: 'streamerBotServerPort', label: 'Port', type: 'number', min: 1, max: 65535, placeholder: '8080' },
+        ],
+        extra: '<div class="connection-status"><span class="connection-dot" id="sb-status-dot"></span><span id="sb-status-text">Not connected</span></div>',
+      },
+      {
+        id: 'section-general',
+        title: 'General',
+        icon: '⚙️',
+        settings: [
+          { key: 'fontSize', label: 'Font Size', type: 'range', min: 0.5, max: 3, step: 0.1, unit: 'x' },
+          { key: 'chatFontFamily', label: 'Font Family', type: 'text', placeholder: 'DM Sans', wide: true },
+          { key: 'fontWeight', label: 'Font Weight', type: 'select', options: [
+            { value: 'normal', label: 'Normal' },
+            { value: '500', label: 'Medium' },
+            { value: '600', label: 'Semibold' },
+            { value: 'bold', label: 'Bold' },
+          ]},
+          { key: 'bgColor', label: 'Background Color', type: 'color' },
+          { key: 'bgOpacity', label: 'Background Opacity', type: 'range', min: 0, max: 1, step: 0.05, unit: '' },
+          { key: 'showTimestamps', label: 'Show Timestamps', type: 'toggle' },
+          { key: 'use24h', label: '24h Format', type: 'toggle' },
+          { key: 'direction', label: 'Direction', type: 'select', options: [
+            { value: 'left', label: 'Left to Right' },
+            { value: 'right', label: 'Right to Left' },
+          ]},
+        ],
+      },
+      {
+        id: 'section-appearance',
+        title: 'Appearance',
+        icon: '✏️',
+        settings: [
+          // Speed & Density
+          { key: '_sub_speed', label: 'Speed & Density', type: 'subsection' },
+          { key: 'danmakuSpeed', label: 'Scroll Speed', type: 'range', min: 3, max: 20, step: 0.5, unit: 's' },
+          { key: 'speedRandomness', label: 'Speed Randomness', type: 'range', min: 0, max: 5, step: 0.5, unit: 's' },
+          { key: 'danmakuDensity', label: 'Lane Density', type: 'range', min: 20, max: 60, step: 2, unit: 'px' },
+          { key: 'maxDanmaku', label: 'Max Danmaku Count', type: 'number', min: 10, max: 300, step: 1 },
+          // Message Style
+          { key: '_sub_message', label: 'Message Style', type: 'subsection' },
+          { key: 'chatBg', label: 'Chat Background', type: 'select', options: [
+            { value: 'dark', label: 'Dark (glass)' },
+            { value: 'light', label: 'Light (glass)' },
+            { value: 'solid', label: 'Solid dark' },
+            { value: 'none', label: 'None / Transparent' },
+          ]},
+          { key: 'chatBorder', label: 'Chat Border', type: 'select', options: [
+            { value: 'subtle', label: 'Subtle' },
+            { value: 'none', label: 'None' },
+            { value: 'colored', label: 'Colored (platform)' },
+          ]},
+          { key: 'danmakuOpacity', label: 'Message Opacity', type: 'range', min: 0.1, max: 1, step: 0.05, unit: '' },
+          { key: 'textShadow', label: 'Text Shadow Intensity', type: 'select', options: [
+            { value: 'none', label: 'None' },
+            { value: 'light', label: 'Light' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'heavy', label: 'Heavy' },
+          ]},
+          // Badges & Avatars
+          { key: '_sub_badges', label: 'Badges & Avatars', type: 'subsection' },
+          { key: 'showBadges', label: 'Show Badges', type: 'toggle' },
+          { key: 'showAvatar', label: 'Show Avatars', type: 'toggle' },
+          { key: 'avatarSize', label: 'Avatar Size', type: 'range', min: 0, max: 40, step: 2, unit: 'px' },
+          { key: 'showUsername', label: 'Show Username', type: 'toggle' },
+          { key: 'showSeparator', label: 'Show Separator', type: 'toggle' },
+          // Platform Badge
+          { key: '_sub_platform_badge', label: 'Platform Badge', type: 'subsection' },
+          { key: 'platformBadge', label: 'Badge Style', type: 'select', options: [
+            { value: 'logo', label: 'Logo' },
+            { value: 'pill', label: 'Pill' },
+            { value: 'name', label: 'Name' },
+            { value: 'hider', label: 'Hider (icon only)' },
+            { value: 'off', label: 'Off' },
+          ]},
+          { key: 'badgeSize', label: 'Badge Size', type: 'range', min: 0.5, max: 2, step: 0.1, unit: 'x' },
+          // Message Padding
+          { key: '_sub_padding', label: 'Message Padding', type: 'subsection' },
+          { key: 'paddingX', label: 'Horizontal Padding', type: 'range', min: 2, max: 24, step: 2, unit: 'px' },
+          { key: 'paddingY', label: 'Vertical Padding', type: 'range', min: 1, max: 12, step: 1, unit: 'px' },
+          { key: 'borderRadius', label: 'Border Radius', type: 'range', min: 0, max: 20, step: 1, unit: 'px' },
+          { key: 'elementGap', label: 'Element Gap', type: 'range', min: 0, max: 12, step: 1, unit: 'px' },
+        ],
+      },
+      {
+        id: 'section-depth',
+        title: 'Depth & Layers',
+        icon: '📑',
+        settings: [
+          // Layer Routing
+          { key: '_sub_routing', label: 'Layer Routing', type: 'subsection' },
+          { key: 'layer', label: 'Preview Layer', type: 'select', tag: 'Preview', options: [
+            { value: 'front', label: 'Front (Events + rare chat)' },
+            { value: 'middle', label: 'Middle (Standard chat)' },
+            { value: 'back', label: 'Back (Blurred depth)' },
+          ]},
+          { key: 'frontChance', label: 'Front Layer Chance', type: 'range', min: 0, max: 0.2, step: 0.01, unit: '%', displayPercent: true },
+          { key: 'backChance', label: 'Back Layer Chance', type: 'range', min: 0, max: 1, step: 0.05, unit: '%', displayPercent: true },
+          // Star-Field Depth
+          { key: '_sub_depth', label: 'Star-Field Depth Effect', type: 'subsection' },
+          { key: 'depthEffect', label: 'Depth Effect', type: 'toggle' },
+          { key: 'depthMinScale', label: 'Min Scale', type: 'range', min: 0.2, max: 0.8, step: 0.05, unit: '' },
+          { key: 'depthMaxScale', label: 'Max Scale', type: 'range', min: 1, max: 1.5, step: 0.05, unit: '' },
+          { key: 'depthMinOpacity', label: 'Min Opacity', type: 'range', min: 0.1, max: 0.6, step: 0.05, unit: '' },
+          { key: 'depthMaxOpacity', label: 'Max Opacity', type: 'range', min: 0.7, max: 1, step: 0.05, unit: '' },
+          // Back Layer Effects
+          { key: '_sub_backlayer', label: 'Back Layer Effects', type: 'subsection' },
+          { key: 'backLayerBlur', label: 'Back Layer Blur', type: 'range', min: 0, max: 5, step: 0.5, unit: 'px' },
+          { key: 'backLayerOpacity', label: 'Back Layer Opacity', type: 'range', min: 0.1, max: 1, step: 0.05, unit: '' },
+          { key: 'frontLayerGlow', label: 'Front Layer Glow', type: 'toggle' },
+        ],
+      },
+      {
+        id: 'section-events',
+        title: 'Event Messages',
+        icon: '⭐',
+        settings: [
+          { key: 'eventStyle', label: 'Event Style', type: 'select', options: [
+            { value: 'solid', label: 'Solid' },
+            { value: 'glass', label: 'Glass' },
+            { value: 'bordered', label: 'Bordered' },
+            { value: 'minimal', label: 'Minimal' },
+          ]},
+          { key: 'eventOpacity', label: 'Event Opacity', type: 'range', min: 0.3, max: 1, step: 0.05, unit: '' },
+          { key: 'eventFontSize', label: 'Event Font Size', type: 'select', options: [
+            { value: 'same', label: 'Same as chat' },
+            { value: 'slightly-larger', label: 'Slightly larger' },
+            { value: 'larger', label: 'Larger' },
+            { value: 'much-larger', label: 'Much larger' },
+          ]},
+          { key: 'eventDurationBonus', label: 'Event Duration Bonus', type: 'range', min: 0, max: 10, step: 1, unit: 's', prefix: '+' },
+          { key: 'eventPaddingX', label: 'Event Padding X', type: 'range', min: 8, max: 40, step: 2, unit: 'px' },
+          { key: 'eventPaddingY', label: 'Event Padding Y', type: 'range', min: 4, max: 16, step: 1, unit: 'px' },
+          { key: 'eventLeftPadding', label: 'Event Left Padding', type: 'range', min: 8, max: 40, step: 2, unit: 'px' },
+          { key: 'showEventGlow', label: 'Show Event Glow', type: 'toggle' },
+          { key: 'eventPlatformColors', label: 'Use Platform Colors', type: 'toggle' },
+          { key: 'highlightValueColor', label: 'Highlight Value Color', type: 'color' },
+        ],
+      },
+      {
+        id: 'section-filtering',
+        title: 'Filtering',
+        icon: '🔍',
+        settings: [
+          { key: 'ignoreCommands', label: 'Ignore Commands', type: 'toggle' },
+          { key: 'ignoreChatters', label: 'Ignore Chatters', type: 'text', placeholder: 'Streamlabs,Streamelements', wide: true },
+          { key: 'minMsgLength', label: 'Min Message Length', type: 'number', min: 0, max: 100 },
+          { key: 'maxMsgLength', label: 'Max Message Length', type: 'number', min: 0, max: 500 },
+          { key: 'spamProtection', label: 'Spam Protection', type: 'number', min: 0, max: 30000, step: 500 },
+          { key: 'hideEmotes', label: 'Hide Emotes', type: 'toggle' },
+        ],
+      },
+      {
+        id: 'section-platforms',
+        title: 'Platforms',
+        icon: '🌐',
+        type: 'platforms',
+      },
+      {
+        id: 'section-obs',
+        title: 'OBS Setup Guide',
+        icon: '📺',
+        type: 'obs-guide',
+      },
     ];
+  }
 
-    var demoEventMessages = [
-        { platform: 'twitch', type: 'follow', username: 'NewFollower123', color: '#ff6b6b', action: 'just followed!' },
-        { platform: 'twitch', type: 'follow', username: 'StreamWatcher99', color: '#e91e63', action: 'just followed!' },
-        { platform: 'twitch', type: 'sub', username: 'LoyalSubscriber', color: '#9147ff', action: 'subscribed!', value: '6 months (Tier 1)' },
-        { platform: 'twitch', type: 'sub', username: 'PrimeGifter', color: '#9147ff', action: 'subscribed!', value: 'Prime' },
-        { platform: 'twitch', type: 'gift', username: 'GenerousDonor', color: '#9147ff', action: 'gifted a 1 month sub to', value: 'LuckyViewer' },
-        { platform: 'twitch', type: 'giftbomb', username: 'SubBomb2000', color: '#9147ff', action: 'is gifting', value: '50 subs!' },
-        { platform: 'twitch', type: 'bits', username: 'CheerMaster', color: '#00e5ff', action: 'cheered', value: '1000 bits', message: 'Keep up the great content!' },
-        { platform: 'twitch', type: 'bits', username: 'BitDropper', color: '#00e5ff', action: 'cheered', value: '100 bits' },
-        { platform: 'twitch', type: 'raid', username: 'RaidBoss', color: '#ff6b35', action: 'raided with', value: '250 viewers' },
-        { platform: 'twitch', type: 'reward', username: 'PointsKing', color: '#9147ff', action: 'redeemed', value: 'Highlight My Message', message: 'THIS IS THE BEST STREAM EVER' },
-        { platform: 'youtube', type: 'follow', username: 'NewSubscriber', color: '#ff0000', action: 'just followed!' },
-        { platform: 'youtube', type: 'superchat', username: 'BigSpender', color: '#ff0000', action: 'super chatted', value: '$50.00', message: 'Love your content! Keep going!' },
-        { platform: 'youtube', type: 'superchat', username: 'GenerousFan', color: '#ff4444', action: 'super chatted', value: '$5.00' },
-        { platform: 'youtube', type: 'member', username: 'ChannelMember', color: '#00b8d4', action: 'joined as a member!', value: '12 months' },
-        { platform: 'youtube', type: 'giftbomb', username: 'GiftLeader', color: '#00b8d4', action: 'gifted', value: '10 memberships' },
-        { platform: 'kick', type: 'follow', username: 'KickFollower', color: '#4ecdc4', action: 'just followed!' },
-        { platform: 'kick', type: 'sub', username: 'KickSub', color: '#4ecdc4', action: 'subscribed!' },
-        { platform: 'kick', type: 'gift', username: 'KickGifter', color: '#4ecdc4', action: 'gifted a sub to', value: 'KickNewbie' },
-        { platform: 'kick', type: 'giftbomb', username: 'KickBomb', color: '#4ecdc4', action: 'is gifting', value: '20 subs!' },
-        { platform: 'tiktok', type: 'follow', username: 'TikTokFan', color: '#ff0050', action: 'just followed!' },
-        { platform: 'tiktok', type: 'gift', username: 'GiftSender', color: '#ff0050', action: 'sent', value: '5x Rose' },
-        { platform: 'tiktok', type: 'gift', username: 'WhaleAlert', color: '#ff0050', action: 'sent', value: '1x Lion' },
-        { platform: 'tiktok', type: 'sub', username: 'TikTokSub', color: '#ff0050', action: 'subscribed!' },
+  // ─── Platform Definitions ───────────────────
+  function buildPlatformDefs() {
+    return [
+      {
+        key: 'Twitch', name: 'Twitch', color: '#9146ff',
+        logo: 'js/modules/twitch/images/logo-twitch.svg',
+        subSettings: [
+          { key: 'showTwitchMessages', label: 'Chat Messages' },
+          { key: 'showTwitchFollows', label: 'Follows' },
+          { key: 'showTwitchBits', label: 'Bits / Cheers' },
+          { key: 'showTwitchSubs', label: 'Subscriptions' },
+          { key: 'showTwitchGiftedSubs', label: 'Gifted Subs' },
+          { key: 'showTwitchMassGiftedSubs', label: 'Gift Bombs' },
+          { key: 'showTwitchRewardRedemptions', label: 'Rewards' },
+          { key: 'showTwitchRaids', label: 'Raids' },
+          { key: 'showTwitchAnnouncements', label: 'Announcements' },
+          { key: 'showTwitchSharedChat', label: 'Shared Chat' },
+        ],
+      },
+      {
+        key: 'Youtube', name: 'YouTube', color: '#ff0000',
+        logo: 'js/modules/youtube/images/logo-youtube.svg',
+        subSettings: [
+          { key: 'showYouTubeMessages', label: 'Chat Messages' },
+          { key: 'showYouTubeSuperChats', label: 'Super Chats' },
+          { key: 'showYouTubeSuperStickers', label: 'Super Stickers' },
+          { key: 'showYouTubeMemberships', label: 'Memberships' },
+          { key: 'showYouTubeGiftMemberships', label: 'Gifted Memberships' },
+          { key: 'showYouTubeMembershipsTrain', label: 'Membership Trains' },
+        ],
+      },
+      {
+        key: 'Kick', name: 'Kick', color: '#53fc18',
+        logo: 'js/modules/kick/images/logo-kick.svg',
+        subSettings: [
+          { key: 'showKickMessages', label: 'Chat Messages' },
+          { key: 'showKickFollows', label: 'Follows' },
+          { key: 'showKickSubs', label: 'Subscriptions' },
+          { key: 'showKickGiftedSubs', label: 'Gifted Subs' },
+          { key: 'showKickMassGiftedSubs', label: 'Gift Bombs' },
+          { key: 'showKickRewardRedemptions', label: 'Rewards' },
+          { key: 'showKickRaids', label: 'Raids' },
+          { key: 'showKickGifts', label: 'Gifts' },
+          { key: 'showKickGiftedSubsUserTrain', label: 'Gift Sub Train' },
+        ],
+        note: '<i class="fa-solid fa-circle-info"></i> Kick chat uses a direct WebSocket connection. Configure your chatroom ID in Streamer.bot.',
+      },
+      {
+        key: 'Tiktok', name: 'TikTok', color: '#ff0050',
+        logo: 'js/modules/tiktok/images/logo-tiktok.svg',
+        subSettings: [
+          { key: 'showTikTokMessages', label: 'Chat Messages' },
+          { key: 'showTikTokFollows', label: 'Follows' },
+          { key: 'showTikTokGifts', label: 'Gifts' },
+          { key: 'showTikTokSubs', label: 'Subscriptions' },
+          { key: 'showTikTokJoins', label: 'Joins' },
+          { key: 'showTikTokLikes', label: 'Likes' },
+          { key: 'showTikTokShares', label: 'Shares' },
+          { key: 'showSmallTikTokGifts', label: 'Small Gifts' },
+        ],
+        note: '<i class="fa-solid fa-circle-info"></i> TikTok requires <a href="https://tikfinity.com" target="_blank">TikFinity</a> running locally (default: ws://localhost:21213).',
+      },
+      {
+        key: 'Streamelements', name: 'StreamElements', color: '#00bfff',
+        logo: 'js/modules/streamelements/images/logo-streamelements.svg',
+      },
+      {
+        key: 'Streamlabs', name: 'StreamLabs', color: '#00c2ff',
+        logo: 'js/modules/streamlabs/images/logo-streamlabs.svg',
+      },
+      {
+        key: 'Patreon', name: 'Patreon', color: '#ff424d',
+        logo: 'js/modules/patreon/images/logo-patreon.svg',
+      },
+      {
+        key: 'Kofi', name: 'Ko-fi', color: '#434b57',
+        logo: 'js/modules/kofi/images/logo-kofi.svg',
+      },
+      {
+        key: 'Tipeee', name: 'TipeeeStream', color: '#3baaee',
+        logo: 'js/modules/tipeeestream/images/logo-tipeeestream.svg',
+      },
+      {
+        key: 'Fourthwall', name: 'Fourthwall', color: '#ffffff',
+        logo: 'js/modules/fourthwall/images/logo-fourthwall.svg',
+      },
     ];
+  }
 
-    // Inject demo message handler into iframe
-    var demoHandlerInjected = false;
+  // ─── Render Sections ────────────────────────
+  function renderSections(sections, container) {
+    container.innerHTML = '';
 
-    function injectDemoHandler(iframe) {
-        if (demoHandlerInjected) return;
-        try {
-            var doc = iframe.contentDocument || iframe.contentWindow.document;
-            if (!doc) return;
+    sections.forEach(function (section) {
+      if (section.type === 'platforms') {
+        renderPlatformsSection(container);
+        return;
+      }
+      if (section.type === 'obs-guide') {
+        renderOBSSection(container);
+        return;
+      }
 
-            var script = doc.createElement('script');
-            script.textContent = [
-                'window.addEventListener("message", function(e) {',
-                '  if (!e.data || !e.data.__danmakuDemo) return;',
-                '  var msg = e.data;',
-                '  if (msg.msgType === "chat") {',
-                '    if (typeof createDanmakuChat === "function") {',
-                '      createDanmakuChat(msg.platform, msg.data);',
-                '    }',
-                '  } else if (msg.msgType === "event") {',
-                '    if (typeof createDanmakuEvent === "function") {',
-                '      createDanmakuEvent(msg.platform, msg.data);',
-                '    }',
-                '  }',
-                '});'
-            ].join('\n');
+      var sectionEl = document.createElement('div');
+      sectionEl.className = 'settings-section';
+      sectionEl.id = section.id;
 
-            doc.head.appendChild(script);
-            demoHandlerInjected = true;
-            return true;
-        } catch (ex) {
-            // Cross-origin or not ready yet
-            return false;
-        }
+      var settingsHTML = section.settings.map(function (s) { return buildSettingHTML(s); }).join('');
+
+      sectionEl.innerHTML =
+        '<div class="section-header" data-section-id="' + section.id + '">' +
+          '<span class="section-icon">' + section.icon + '</span>' +
+          '<span class="section-title">' + section.title + '</span>' +
+          '<svg class="section-chevron" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>' +
+        '</div>' +
+        '<div class="section-body">' +
+          settingsHTML +
+          (section.extra || '') +
+        '</div>';
+
+      container.appendChild(sectionEl);
+
+      // Collapsible
+      var header = sectionEl.querySelector('.section-header');
+      var body = sectionEl.querySelector('.section-body');
+      var chevron = sectionEl.querySelector('.section-chevron');
+      header.addEventListener('click', function () {
+        var isOpen = !body.classList.contains('collapsed');
+        body.classList.toggle('collapsed');
+        chevron.classList.toggle('collapsed', isOpen);
+      });
+
+      // Bind controls
+      section.settings.forEach(function (s) {
+        if (s.type !== 'subsection') bindSetting(s, sectionEl);
+      });
+    });
+
+    // Add Layer URLs at the very bottom
+    renderLayerURLs(container);
+  }
+
+  // ─── Build Setting HTML ─────────────────────
+  function buildSettingHTML(s) {
+    if (s.type === 'subsection') {
+      return '<div class="subsection-title">' + s.label + '</div>';
     }
 
-    // ─── Start Demo ───────────────────────────────
-    var demoInterval = null;
-    var demoActive = false;
+    var id = 'setting-' + s.key;
+    var inputHTML = '';
+    var isOn = !!config[s.key];
+    var tag = s.tag ? '<span class="setting-tag">' + s.tag + '</span>' : '';
 
-    window.startDemo = function () {
-        var iframe = document.getElementById('preview-frame');
-        if (!iframe) return;
+    switch (s.type) {
+      case 'toggle':
+        inputHTML =
+          '<div class="toggle-switch ' + (isOn ? 'on' : '') + '" id="' + id + '" data-key="' + s.key + '">' +
+            '<div class="toggle-track"><div class="toggle-thumb"></div></div>' +
+            '<span class="toggle-state ' + (isOn ? 'on' : '') + '">' +
+              '<span class="state-dot" style="background:' + (isOn ? 'var(--green)' : 'var(--red)') + '"></span>' +
+              (isOn ? 'ON' : 'OFF') +
+            '</span>' +
+          '</div>';
+        break;
 
-        // Wait for iframe to be ready, then inject handler and start sending
-        var attempts = 0;
-        var maxAttempts = 30;
-
-        function tryInit() {
-            attempts++;
-            if (!iframe.contentWindow) {
-                if (attempts < maxAttempts) {
-                    setTimeout(tryInit, 300);
-                }
-                return;
-            }
-
-            var injected = injectDemoHandler(iframe);
-            if (!injected) {
-                if (attempts < maxAttempts) {
-                    setTimeout(tryInit, 300);
-                }
-                return;
-            }
-
-            // Successfully injected, start demo messages
-            if (demoActive) return; // Already running
-            demoActive = true;
-            sendDemoMessage();
-
-            demoInterval = setInterval(sendDemoMessage, function () {
-                return 1000 + Math.random() * 2000;
-            }());
-        }
-
-        setTimeout(tryInit, 500);
-    };
-
-    function sendDemoMessage() {
-        var iframe = document.getElementById('preview-frame');
-        if (!iframe || !iframe.contentWindow) return;
-
-        // Randomize interval for next message
-        if (demoInterval) {
-            clearInterval(demoInterval);
-            demoInterval = setInterval(sendDemoMessage, 1000 + Math.random() * 2000);
-        }
-
-        // 75% chance chat, 25% chance event
-        var isEvent = Math.random() < 0.25;
-
-        if (isEvent) {
-            var evt = demoEventMessages[Math.floor(Math.random() * demoEventMessages.length)];
-            var eventData = {
-                __danmakuDemo: true,
-                msgType: 'event',
-                platform: evt.platform,
-                data: {
-                    username: evt.username,
-                    color: evt.color,
-                    action: evt.action
-                }
-            };
-            if (evt.value) eventData.data.value = evt.value;
-            if (evt.message) eventData.data.messageHtml = evt.message;
-
-            iframe.contentWindow.postMessage(eventData, '*');
+      case 'range':
+        var displayVal = config[s.key];
+        if (s.displayPercent) {
+          displayVal = Math.round(parseFloat(config[s.key]) * 100) + '%';
+        } else if (s.prefix) {
+          displayVal = s.prefix + config[s.key] + (s.unit || '');
         } else {
-            var chat = demoChatMessages[Math.floor(Math.random() * demoChatMessages.length)];
-            var chatData = {
-                __danmakuDemo: true,
-                msgType: 'chat',
-                platform: chat.platform,
-                data: {
-                    text: chat.text,
-                    username: chat.username,
-                    color: chat.color
-                }
-            };
-
-            iframe.contentWindow.postMessage(chatData, '*');
+          displayVal = config[s.key] + (s.unit || '');
         }
+        inputHTML =
+          '<div class="range-control">' +
+            '<input type="range" id="' + id + '" data-key="' + s.key + '" ' +
+              'min="' + s.min + '" max="' + s.max + '" step="' + (s.step || 1) + '" ' +
+              'value="' + config[s.key] + '" class="range-input">' +
+            '<span class="range-value" id="' + id + '-value">' + displayVal + '</span>' +
+          '</div>';
+        break;
+
+      case 'number':
+        inputHTML =
+          '<input type="number" id="' + id + '" data-key="' + s.key + '" ' +
+            (s.min !== undefined ? 'min="' + s.min + '"' : '') +
+            (s.max !== undefined ? 'max="' + s.max + '"' : '') +
+            (s.step ? 'step="' + s.step + '"' : '') +
+            'value="' + config[s.key] + '" class="text-input" placeholder="' + (s.placeholder || '') + '">';
+        break;
+
+      case 'text':
+        inputHTML =
+          '<input type="text" id="' + id + '" data-key="' + s.key + '" ' +
+            'value="' + config[s.key] + '" class="text-input' + (s.wide ? ' wide' : '') + '" ' +
+            'placeholder="' + (s.placeholder || '') + '">';
+        break;
+
+      case 'color':
+        inputHTML =
+          '<div class="color-control">' +
+            '<input type="color" id="' + id + '" data-key="' + s.key + '" value="' + config[s.key] + '" class="color-input">' +
+            '<span class="color-value" id="' + id + '-value">' + config[s.key] + '</span>' +
+          '</div>';
+        break;
+
+      case 'select':
+        inputHTML =
+          '<select id="' + id + '" data-key="' + s.key + '" class="select-input">' +
+            s.options.map(function (o) {
+              return '<option value="' + o.value + '"' + (config[s.key] === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+            }).join('') +
+          '</select>';
+        break;
     }
 
-    // ─── Initialize Everything ────────────────────
-    loadSettingsFromURL();
-    updateLayerURLs();
+    return '<div class="setting-row" id="row-' + s.key + '">' +
+      '<div class="setting-label"><span>' + s.label + '</span>' + tag + '</div>' +
+      '<div class="setting-input">' + inputHTML + '</div>' +
+    '</div>';
+  }
 
-    // Small delay then start the preview and demo
-    setTimeout(function () {
-        updatePreview();
-        startDemo();
-    }, 100);
+  // ─── Bind Setting Controls ──────────────────
+  function bindSetting(s, sectionEl) {
+    var id = 'setting-' + s.key;
+    var el = sectionEl.querySelector('#' + id);
+    if (!el) return;
 
-    // Re-inject handler when iframe reloads (src change)
+    switch (s.type) {
+      case 'toggle':
+        el.addEventListener('click', function () {
+          config[s.key] = !config[s.key];
+          var isOn = config[s.key];
+          el.className = 'toggle-switch ' + (isOn ? 'on' : '');
+          el.querySelector('.toggle-thumb').style.transform = isOn ? 'translateX(18px)' : '';
+          el.querySelector('.toggle-track').style.background = isOn ? 'var(--green-bg)' : 'var(--red-bg)';
+          el.querySelector('.toggle-track').style.borderColor = isOn ? 'var(--green-border)' : 'var(--red-border)';
+          var stateEl = el.querySelector('.toggle-state');
+          stateEl.className = 'toggle-state ' + (isOn ? 'on' : '');
+          stateEl.innerHTML = '<span class="state-dot" style="background:' + (isOn ? 'var(--green)' : 'var(--red)') + '"></span>' + (isOn ? 'ON' : 'OFF');
+          onConfigChange();
+        });
+        break;
+
+      case 'range':
+        el.addEventListener('input', function () {
+          config[s.key] = parseFloat(el.value);
+          var displayVal = el.value;
+          if (s.displayPercent) {
+            displayVal = Math.round(parseFloat(el.value) * 100) + '%';
+          } else if (s.prefix) {
+            displayVal = s.prefix + el.value + (s.unit || '');
+          } else {
+            displayVal = el.value + (s.unit || '');
+          }
+          document.getElementById(id + '-value').textContent = displayVal;
+          onConfigChange();
+        });
+        break;
+
+      case 'number':
+        el.addEventListener('change', function () {
+          config[s.key] = parseFloat(el.value) || 0;
+          onConfigChange();
+        });
+        break;
+
+      case 'text':
+        el.addEventListener('input', function () {
+          config[s.key] = el.value;
+          onConfigChange();
+        });
+        break;
+
+      case 'color':
+        el.addEventListener('input', function () {
+          config[s.key] = el.value;
+          document.getElementById(id + '-value').textContent = el.value;
+          onConfigChange();
+        });
+        break;
+
+      case 'select':
+        el.addEventListener('change', function () {
+          config[s.key] = el.value;
+          onConfigChange();
+          // If layer changed, update indicators
+          if (s.key === 'layer') updateLayerIndicators();
+        });
+        break;
+    }
+  }
+
+  // ─── Render Platforms Section ───────────────
+  function renderPlatformsSection(container) {
+    var platforms = buildPlatformDefs();
+
+    var sectionEl = document.createElement('div');
+    sectionEl.className = 'settings-section';
+    sectionEl.id = 'section-platforms';
+
+    var bodyContent = '';
+
+    // Chat platforms (first 4: Twitch, YouTube, Kick, TikTok)
+    var chatPlatforms = platforms.slice(0, 4);
+    chatPlatforms.forEach(function (p) {
+      bodyContent += '<div class="platform-block">';
+      bodyContent += '<div class="platform-row">';
+      bodyContent += '<img class="platform-logo" src="' + p.logo + '" alt="' + p.name + '">';
+      bodyContent += '<span class="platform-dot" style="background:' + p.color + '"></span>';
+      bodyContent += '<span class="platform-name">' + p.name + '</span>';
+      var mainKey = 'show' + p.key;
+      var isOn = !!config[mainKey];
+      bodyContent +=
+        '<div class="toggle-switch ' + (isOn ? 'on' : '') + '" data-key="' + mainKey + '" data-toggle-target="' + p.key.toLowerCase() + '-sub">' +
+          '<div class="toggle-track"><div class="toggle-thumb"></div></div>' +
+          '<span class="toggle-state ' + (isOn ? 'on' : '') + '">' +
+            '<span class="state-dot" style="background:' + (isOn ? 'var(--green)' : 'var(--red)') + '"></span>' +
+            (isOn ? 'ON' : 'OFF') +
+          '</span>' +
+        '</div>';
+      bodyContent += '</div>';
+
+      if (p.subSettings) {
+        bodyContent += '<div class="platform-sub-settings" id="' + p.key.toLowerCase() + '-sub" style="display:' + (isOn ? 'block' : 'none') + ';">';
+        p.subSettings.forEach(function (ss) {
+          var ssOn = !!config[ss.key];
+          bodyContent +=
+            '<div class="setting-row">' +
+              '<div class="setting-label"><span>' + ss.label + '</span></div>' +
+              '<div class="setting-input">' +
+                '<div class="toggle-switch ' + (ssOn ? 'on' : '') + '" data-key="' + ss.key + '">' +
+                  '<div class="toggle-track"><div class="toggle-thumb"></div></div>' +
+                  '<span class="toggle-state ' + (ssOn ? 'on' : '') + '">' +
+                    '<span class="state-dot" style="background:' + (ssOn ? 'var(--green)' : 'var(--red)') + '"></span>' +
+                    (ssOn ? 'ON' : 'OFF') +
+                  '</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        });
+        if (p.note) {
+          bodyContent += '<p class="platform-note">' + p.note + '</p>';
+        }
+        bodyContent += '</div>';
+      }
+
+      bodyContent += '</div>';
+    });
+
+    // Donation platforms (rest)
+    bodyContent += '<div class="donation-header"><i class="fa-solid fa-heart"></i> Donation Platforms</div>';
+    var donationPlatforms = platforms.slice(4);
+    donationPlatforms.forEach(function (p) {
+      bodyContent += '<div class="platform-block">';
+      bodyContent += '<div class="platform-row">';
+      bodyContent += '<img class="platform-logo" src="' + p.logo + '" alt="' + p.name + '">';
+      bodyContent += '<span class="platform-dot" style="background:' + p.color + '"></span>';
+      bodyContent += '<span class="platform-name">' + p.name + '</span>';
+      var mainKey = 'show' + p.key;
+      var isOn = !!config[mainKey];
+      bodyContent +=
+        '<div class="toggle-switch ' + (isOn ? 'on' : '') + '" data-key="' + mainKey + '">' +
+          '<div class="toggle-track"><div class="toggle-thumb"></div></div>' +
+          '<span class="toggle-state ' + (isOn ? 'on' : '') + '">' +
+            '<span class="state-dot" style="background:' + (isOn ? 'var(--green)' : 'var(--red)') + '"></span>' +
+            (isOn ? 'ON' : 'OFF') +
+          '</span>' +
+        '</div>';
+      bodyContent += '</div></div>';
+    });
+
+    sectionEl.innerHTML =
+      '<div class="section-header" data-section-id="section-platforms">' +
+        '<span class="section-icon">🌐</span>' +
+        '<span class="section-title">Platforms</span>' +
+        '<svg class="section-chevron" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>' +
+      '</div>' +
+      '<div class="section-body">' + bodyContent + '</div>';
+
+    container.appendChild(sectionEl);
+
+    // Collapsible
+    var header = sectionEl.querySelector('.section-header');
+    var body = sectionEl.querySelector('.section-body');
+    var chevron = sectionEl.querySelector('.section-chevron');
+    header.addEventListener('click', function () {
+      var isOpen = !body.classList.contains('collapsed');
+      body.classList.toggle('collapsed');
+      chevron.classList.toggle('collapsed', isOpen);
+    });
+
+    // Bind all toggle switches in this section
+    sectionEl.querySelectorAll('.toggle-switch').forEach(function (toggleEl) {
+      toggleEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var key = toggleEl.getAttribute('data-key');
+        if (!key || !(key in config)) return;
+
+        config[key] = !config[key];
+        var isOn = config[key];
+        toggleEl.className = 'toggle-switch ' + (isOn ? 'on' : '');
+        toggleEl.querySelector('.toggle-thumb').style.transform = isOn ? 'translateX(18px)' : '';
+        toggleEl.querySelector('.toggle-track').style.background = isOn ? 'var(--green-bg)' : 'var(--red-bg)';
+        toggleEl.querySelector('.toggle-track').style.borderColor = isOn ? 'var(--green-border)' : 'var(--red-border)';
+        var stateEl = toggleEl.querySelector('.toggle-state');
+        stateEl.className = 'toggle-state ' + (isOn ? 'on' : '');
+        stateEl.innerHTML = '<span class="state-dot" style="background:' + (isOn ? 'var(--green)' : 'var(--red)') + '"></span>' + (isOn ? 'ON' : 'OFF');
+
+        // Show/hide sub-settings
+        var targetId = toggleEl.getAttribute('data-toggle-target');
+        if (targetId) {
+          var target = document.getElementById(targetId);
+          if (target) target.style.display = isOn ? 'block' : 'none';
+        }
+
+        onConfigChange();
+      });
+    });
+  }
+
+  // ─── Render OBS Section ─────────────────────
+  function renderOBSSection(container) {
+    var sectionEl = document.createElement('div');
+    sectionEl.className = 'settings-section';
+    sectionEl.id = 'section-obs';
+
+    sectionEl.innerHTML =
+      '<div class="section-header" data-section-id="section-obs">' +
+        '<span class="section-icon">📺</span>' +
+        '<span class="section-title">OBS Setup Guide</span>' +
+        '<svg class="section-chevron" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>' +
+      '</div>' +
+      '<div class="section-body">' +
+        '<div class="obs-steps">' +
+          '<div class="step"><div class="step-num">1</div><div class="step-content"><h4>Add 3 Browser Sources</h4><p>In OBS, add <strong>3 Browser Sources</strong> (one for each layer: Front, Middle, Back). Name them "Danmaku Front", "Danmaku Middle", "Danmaku Back".</p></div></div>' +
+          '<div class="step"><div class="step-num">2</div><div class="step-content"><h4>Set the URLs</h4><p>Copy the layer URLs from below. The <strong>Front</strong> layer goes on top, <strong>Middle</strong> in the middle, <strong>Back</strong> at the bottom of your source list.</p></div></div>' +
+          '<div class="step"><div class="step-num">3</div><div class="step-content"><h4>Custom Size</h4><p>Set each browser source to the same dimensions (e.g., your full stream resolution). Set <strong>width</strong> and <strong>height</strong> in the browser source properties.</p></div></div>' +
+          '<div class="step"><div class="step-num">4</div><div class="step-content"><h4>Transparent Background</h4><p>Make sure "Transparent background" is <strong>checked</strong> in each browser source so only the danmaku messages are visible over your stream.</p></div></div>' +
+        '</div>' +
+        '<div class="obs-note"><strong>Tip:</strong> Use the <em>Copy OBS URL</em> button in the header to quickly copy the middle layer URL for the most common setup.</div>' +
+      '</div>';
+
+    container.appendChild(sectionEl);
+
+    var header = sectionEl.querySelector('.section-header');
+    var body = sectionEl.querySelector('.section-body');
+    var chevron = sectionEl.querySelector('.section-chevron');
+    header.addEventListener('click', function () {
+      var isOpen = !body.classList.contains('collapsed');
+      body.classList.toggle('collapsed');
+      chevron.classList.toggle('collapsed', isOpen);
+    });
+  }
+
+  // ─── Render Layer URLs (Bottom) ────────────
+  function renderLayerURLs(container) {
+    var div = document.createElement('div');
+    div.className = 'url-boxes';
+    div.innerHTML =
+      '<div class="url-boxes-title"><i class="fa-solid fa-link"></i> Layer URLs</div>' +
+      '<div class="url-box">' +
+        '<div class="url-box-label"><i class="fa-solid fa-arrow-up"></i> Front Layer URL</div>' +
+        '<code id="url-front"></code>' +
+        '<div class="copy-hint">Click to copy</div>' +
+      '</div>' +
+      '<div class="url-box">' +
+        '<div class="url-box-label"><i class="fa-solid fa-minus"></i> Middle Layer URL</div>' +
+        '<code id="url-middle"></code>' +
+        '<div class="copy-hint">Click to copy</div>' +
+      '</div>' +
+      '<div class="url-box">' +
+        '<div class="url-box-label"><i class="fa-solid fa-arrow-down"></i> Back Layer URL</div>' +
+        '<code id="url-back"></code>' +
+        '<div class="copy-hint">Click to copy</div>' +
+      '</div>';
+
+    container.appendChild(div);
+
+    // Click to copy
+    div.querySelectorAll('code').forEach(function (code) {
+      code.addEventListener('click', function () {
+        navigator.clipboard.writeText(code.textContent).then(function () {
+          code.classList.add('copied');
+          setTimeout(function () { code.classList.remove('copied'); }, 600);
+        }).catch(function () {
+          // Fallback
+          var range = document.createRange();
+          range.selectNodeContents(code);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        });
+      });
+    });
+  }
+
+  // ─── Config Change Handler ─────────────────
+  function onConfigChange() {
+    if (refreshTimeout) clearTimeout(refreshTimeout);
+    refreshTimeout = setTimeout(function () {
+      refreshPreview();
+      updateLayerURLDisplay();
+      updateLayerIndicators();
+    }, 300);
+  }
+
+  // ─── Generate Overlay URL ──────────────────
+  function generateURL(layer) {
+    var params = new URLSearchParams();
+    var defaults = DEFAULTS;
+    Object.keys(defaults).forEach(function (key) {
+      if (config[key] !== defaults[key]) {
+        params.set(key, String(config[key]));
+      }
+    });
+    params.set('layer', layer);
+    params.set('demo', 'true');
+    params.set('preview', 'true');
+
+    var basePath = window.location.pathname.replace('settings.html', 'overlay.html');
+    return basePath + '?' + params.toString();
+  }
+
+  // ─── Update Layer URL Display ──────────────
+  function updateLayerURLDisplay() {
+    ['front', 'middle', 'back'].forEach(function (layer) {
+      var el = document.getElementById('url-' + layer);
+      if (el) el.textContent = generateURL(layer);
+    });
+  }
+
+  // ─── Update Layer Indicators ───────────────
+  function updateLayerIndicators() {
+    var layerMap = { front: 'frontChance', middle: 'backChance', back: 'depthEffect' };
+    // Show all as active (always visible in overlay mode)
+    ['front', 'middle', 'back'].forEach(function (layer) {
+      var ind = document.getElementById('ind-' + layer);
+      if (ind) ind.className = 'indicator-dot active';
+    });
+  }
+
+  // ─── Refresh Preview ───────────────────────
+  function refreshPreview() {
     var previewFrame = document.getElementById('preview-frame');
-    if (previewFrame) {
-        previewFrame.addEventListener('load', function () {
-            demoHandlerInjected = false;
-            demoActive = false;
-            if (demoInterval) {
-                clearInterval(demoInterval);
-                demoInterval = null;
-            }
-            // Restart demo with new iframe content
-            setTimeout(startDemo, 300);
+    var previewSize = document.getElementById('preview-size');
+    if (!previewFrame) return;
+
+    var sizeStr = previewSize ? previewSize.value : '1280x720';
+    var parts = sizeStr.split('x');
+    var w = parseInt(parts[0]) || 1280;
+    var h = parseInt(parts[1]) || 720;
+
+    previewFrame.style.width = w + 'px';
+    previewFrame.style.height = h + 'px';
+
+    var layer = config.layer || 'middle';
+    var newSrc = generateURL(layer);
+
+    if (newSrc === lastPreviewSrc) return;
+    lastPreviewSrc = newSrc;
+
+    previewFrame.src = newSrc;
+  }
+
+  // ─── Load Settings from URL ────────────────
+  function loadSettingsFromURL() {
+    var params = new URLSearchParams(window.location.search);
+    params.forEach(function (value, key) {
+      if (key === 'demo' || key === 'preview' || key === 'layer') return;
+      if (key in config) {
+        if (typeof config[key] === 'boolean') {
+          config[key] = value === 'true';
+        } else {
+          config[key] = value;
+        }
+      }
+    });
+
+    var layerParam = params.get('layer');
+    if (layerParam && ['front', 'middle', 'back'].indexOf(layerParam) !== -1) {
+      config.layer = layerParam;
+    }
+  }
+
+  // ─── Section Toggle (exposed globally) ─────
+  window.toggleSection = function (headerEl) {
+    var section = headerEl.parentElement;
+    var body = section.querySelector('.section-body');
+    var chevron = section.querySelector('.section-chevron');
+    if (body) {
+      var isOpen = !body.classList.contains('collapsed');
+      body.classList.toggle('collapsed');
+      if (chevron) chevron.classList.toggle('collapsed', isOpen);
+    }
+  };
+
+  // ─── Scroll to Section (exposed globally) ──
+  window.scrollToSection = function (id) {
+    var panelScroll = document.getElementById('panel-scroll');
+    var section = document.getElementById(id);
+    if (!panelScroll || !section) return;
+
+    // Ensure section is not collapsed
+    var body = section.querySelector('.section-body');
+    var chevron = section.querySelector('.section-chevron');
+    if (body && body.classList.contains('collapsed')) {
+      body.classList.remove('collapsed');
+      if (chevron) chevron.classList.remove('collapsed');
+    }
+
+    var offset = section.offsetTop - panelScroll.offsetTop - 8;
+    panelScroll.scrollTo({ top: offset, behavior: 'smooth' });
+
+    // On mobile, close panel after scroll
+    if (window.innerWidth <= 700) {
+      var panel = document.getElementById('settings-panel');
+      if (panel) panel.classList.remove('open');
+    }
+  };
+
+  // ─── Mobile Panel Toggle ───────────────────
+  window.toggleMobilePanel = function () {
+    var panel = document.getElementById('settings-panel');
+    if (panel) panel.classList.toggle('open');
+  };
+
+  // ═══════════════════════════════════════════
+  //              DEMO MODE
+  // ═══════════════════════════════════════════
+
+  var demoChatMessages = [
+    { platform: 'twitch', username: 'NightOwl42', color: '#ff6b6b', text: 'This stream is amazing!' },
+    { platform: 'twitch', username: 'PixelWizard', color: '#9147ff', text: 'Let\'s gooo!' },
+    { platform: 'twitch', username: 'StreamQueen', color: '#00bcd4', text: 'First time here, love the vibes' },
+    { platform: 'twitch', username: 'xX_Gamer_Xx', color: '#4caf50', text: 'PogChamp PogChamp' },
+    { platform: 'twitch', username: 'CoffeeAndCode', color: '#ff9800', text: 'How long have you been streaming?' },
+    { platform: 'twitch', username: 'MidnightRider', color: '#e91e63', text: 'That play was insane!' },
+    { platform: 'twitch', username: 'ChillVibesOnly', color: '#8bc34a', text: 'just lurking and enjoying the stream' },
+    { platform: 'twitch', username: 'TurboSnail', color: '#03a9f4', text: 'can you play some music?' },
+    { platform: 'twitch', username: 'RNGesusBless', color: '#ffc107', text: 'LETS GOOO' },
+    { platform: 'twitch', username: 'SilentViewer', color: '#cddc39', text: 'lol' },
+    { platform: 'youtube', username: 'GamingPro2024', color: '#ff0000', text: 'Great content as always!' },
+    { platform: 'youtube', username: 'TechEnthusiast', color: '#2196f3', text: 'What settings are you using?' },
+    { platform: 'youtube', username: 'MusicLover', color: '#e91e63', text: 'The background music is perfect' },
+    { platform: 'youtube', username: 'CasualWatcher', color: '#4caf50', text: 'Subscribed!' },
+    { platform: 'youtube', username: 'NightOwlGaming', color: '#ff9800', text: 'Who else is watching at 3am?' },
+    { platform: 'youtube', username: 'PixelArtist', color: '#9c27b0', text: 'That artwork is incredible, keep it up!' },
+    { platform: 'youtube', username: 'JustPassingBy', color: '#00bcd4', text: 'hello from Brazil!' },
+    { platform: 'youtube', username: 'SuperFan99', color: '#f44336', text: 'Been here since day one' },
+    { platform: 'kick', username: 'GreenMachine', color: '#4ecdc4', text: 'Kick is the future!' },
+    { platform: 'kick', username: 'CoolStreamer', color: '#53fc18', text: 'Love this community' },
+    { platform: 'kick', username: 'ChillDude', color: '#4ecdc4', text: 'hey everyone' },
+    { platform: 'kick', username: 'VIPMember', color: '#88c999', text: 'just subbed, this is awesome content' },
+    { platform: 'kick', username: 'ChatLord', color: '#4ecdc4', text: 'spam time W W W W W W' },
+    { platform: 'tiktok', username: 'FYP Legend', color: '#ff0050', text: 'saw this on my fyp!' },
+    { platform: 'tiktok', username: 'vibe.check', color: '#25f4ee', text: 'no cap this is fire' },
+    { platform: 'tiktok', username: 'clout chaser', color: '#ff0050', text: 'follow me back plz' },
+    { platform: 'tiktok', username: 'lol king', color: '#fe2c55', text: '💀💀💀' },
+    { platform: 'tiktok', username: 'random user', color: '#25f4ee', text: 'POV: you found the best live' },
+    { platform: 'tiktok', username: 'shadow lurker', color: '#ff0050', text: 'im just watching quietly' },
+  ];
+
+  var demoEventMessages = [
+    { platform: 'twitch', type: 'follow', username: 'NewFollower123', color: '#ff6b6b', action: 'just followed!' },
+    { platform: 'twitch', type: 'follow', username: 'StreamWatcher99', color: '#e91e63', action: 'just followed!' },
+    { platform: 'twitch', type: 'sub', username: 'LoyalSubscriber', color: '#9147ff', action: 'subscribed!', value: '6 months (Tier 1)' },
+    { platform: 'twitch', type: 'sub', username: 'PrimeGifter', color: '#9147ff', action: 'subscribed!', value: 'Prime' },
+    { platform: 'twitch', type: 'gift', username: 'GenerousDonor', color: '#9147ff', action: 'gifted a 1 month sub to', value: 'LuckyViewer' },
+    { platform: 'twitch', type: 'giftbomb', username: 'SubBomb2000', color: '#9147ff', action: 'is gifting', value: '50 subs!' },
+    { platform: 'twitch', type: 'bits', username: 'CheerMaster', color: '#00e5ff', action: 'cheered', value: '1000 bits', message: 'Keep up the great content!' },
+    { platform: 'twitch', type: 'bits', username: 'BitDropper', color: '#00e5ff', action: 'cheered', value: '100 bits' },
+    { platform: 'twitch', type: 'raid', username: 'RaidBoss', color: '#ff6b35', action: 'raided with', value: '250 viewers' },
+    { platform: 'twitch', type: 'reward', username: 'PointsKing', color: '#9147ff', action: 'redeemed', value: 'Highlight My Message', message: 'THIS IS THE BEST STREAM EVER' },
+    { platform: 'youtube', type: 'follow', username: 'NewSubscriber', color: '#ff0000', action: 'just followed!' },
+    { platform: 'youtube', type: 'superchat', username: 'BigSpender', color: '#ff0000', action: 'super chatted', value: '$50.00', message: 'Love your content! Keep going!' },
+    { platform: 'youtube', type: 'superchat', username: 'GenerousFan', color: '#ff4444', action: 'super chatted', value: '$5.00' },
+    { platform: 'youtube', type: 'member', username: 'ChannelMember', color: '#00b8d4', action: 'joined as a member!', value: '12 months' },
+    { platform: 'youtube', type: 'giftbomb', username: 'GiftLeader', color: '#00b8d4', action: 'gifted', value: '10 memberships' },
+    { platform: 'kick', type: 'follow', username: 'KickFollower', color: '#4ecdc4', action: 'just followed!' },
+    { platform: 'kick', type: 'sub', username: 'KickSub', color: '#4ecdc4', action: 'subscribed!' },
+    { platform: 'kick', type: 'gift', username: 'KickGifter', color: '#4ecdc4', action: 'gifted a sub to', value: 'KickNewbie' },
+    { platform: 'kick', type: 'giftbomb', username: 'KickBomb', color: '#4ecdc4', action: 'is gifting', value: '20 subs!' },
+    { platform: 'tiktok', type: 'follow', username: 'TikTokFan', color: '#ff0050', action: 'just followed!' },
+    { platform: 'tiktok', type: 'gift', username: 'GiftSender', color: '#ff0050', action: 'sent', value: '5x Rose' },
+    { platform: 'tiktok', type: 'gift', username: 'WhaleAlert', color: '#ff0050', action: 'sent', value: '1x Lion' },
+    { platform: 'tiktok', type: 'sub', username: 'TikTokSub', color: '#ff0050', action: 'subscribed!' },
+  ];
+
+  function injectDemoHandler(iframe) {
+    if (demoHandlerInjected) return;
+    try {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (!doc || !doc.head) return false;
+
+      var script = doc.createElement('script');
+      script.textContent = [
+        'window.addEventListener("message", function(e) {',
+        '  if (!e.data || !e.data.__danmakuDemo) return;',
+        '  var msg = e.data;',
+        '  if (msg.msgType === "chat") {',
+        '    if (typeof createDanmakuChat === "function") {',
+        '      createDanmakuChat(msg.platform, msg.data);',
+        '    }',
+        '  } else if (msg.msgType === "event") {',
+        '    if (typeof createDanmakuEvent === "function") {',
+        '      createDanmakuEvent(msg.platform, msg.data);',
+        '    }',
+        '  }',
+        '});'
+      ].join('\n');
+
+      doc.head.appendChild(script);
+      demoHandlerInjected = true;
+      return true;
+    } catch (ex) {
+      return false;
+    }
+  }
+
+  window.startDemo = function () {
+    var iframe = document.getElementById('preview-frame');
+    if (!iframe || demoPaused) return;
+
+    var attempts = 0;
+    var maxAttempts = 30;
+
+    function tryInit() {
+      attempts++;
+      if (!iframe.contentWindow) {
+        if (attempts < maxAttempts) setTimeout(tryInit, 300);
+        return;
+      }
+
+      var injected = injectDemoHandler(iframe);
+      if (!injected) {
+        if (attempts < maxAttempts) setTimeout(tryInit, 300);
+        return;
+      }
+
+      if (demoActive) return;
+      demoActive = true;
+      sendDemoMessage();
+
+      demoInterval = setInterval(sendDemoMessage, 1000 + Math.random() * 2000);
+    }
+
+    setTimeout(tryInit, 500);
+  };
+
+  function sendDemoMessage() {
+    if (demoPaused) return;
+    var iframe = document.getElementById('preview-frame');
+    if (!iframe || !iframe.contentWindow) return;
+
+    // Randomize next interval
+    if (demoInterval) {
+      clearInterval(demoInterval);
+      demoInterval = setInterval(sendDemoMessage, 1000 + Math.random() * 2000);
+    }
+
+    // 75% chat, 25% event
+    if (Math.random() < 0.25) {
+      var evt = demoEventMessages[Math.floor(Math.random() * demoEventMessages.length)];
+      var eventData = {
+        __danmakuDemo: true,
+        msgType: 'event',
+        platform: evt.platform,
+        data: { username: evt.username, color: evt.color, action: evt.action }
+      };
+      if (evt.value) eventData.data.value = evt.value;
+      if (evt.message) eventData.data.messageHtml = evt.message;
+      iframe.contentWindow.postMessage(eventData, '*');
+    } else {
+      var chat = demoChatMessages[Math.floor(Math.random() * demoChatMessages.length)];
+      iframe.contentWindow.postMessage({
+        __danmakuDemo: true,
+        msgType: 'chat',
+        platform: chat.platform,
+        data: { text: chat.text, username: chat.username, color: chat.color }
+      }, '*');
+    }
+  }
+
+  // ─── Streamer.bot Connection Status ────────
+  function initConnectionStatus() {
+    var dot = document.getElementById('sb-status-dot');
+    var text = document.getElementById('sb-status-text');
+    if (!dot || !text) return;
+
+    function checkConnection() {
+      var addr = config.streamerBotServerAddress || '127.0.0.1';
+      var port = config.streamerBotServerPort || '8080';
+      var url = 'http://' + addr + ':' + port + '/GetConnection';
+
+      fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(3000) })
+        .then(function () {
+          dot.className = 'connection-dot connected';
+          text.textContent = 'Connected';
+        })
+        .catch(function () {
+          dot.className = 'connection-dot disconnected';
+          text.textContent = 'Not connected';
         });
     }
+
+    checkConnection();
+    setInterval(checkConnection, 15000);
+  }
+
+  // ═══════════════════════════════════════════
+  //           INITIALIZATION
+  // ═══════════════════════════════════════════
+
+  function init() {
+    loadSettingsFromURL();
+
+    var panelScroll = document.getElementById('panel-scroll');
+    var sections = buildSettingsSections();
+    renderSections(sections, panelScroll);
+
+    var previewFrame = document.getElementById('preview-frame');
+    var previewSize = document.getElementById('preview-size');
+
+    // Preview size change
+    previewSize.addEventListener('change', refreshPreview);
+
+    // Reset button
+    document.getElementById('btn-reset').addEventListener('click', function () {
+      if (confirm('Reset all settings to defaults?')) {
+        config = { ...DEFAULTS };
+        renderSections(buildSettingsSections(), panelScroll);
+        refreshPreview();
+        initConnectionStatus();
+      }
+    });
+
+    // Copy OBS URL button
+    document.getElementById('btn-export').addEventListener('click', function () {
+      var url = generateURL('middle');
+      navigator.clipboard.writeText(url).then(function () {
+        var btn = document.getElementById('btn-export');
+        var origHTML = btn.innerHTML;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> <span class="btn-text">Copied!</span>';
+        setTimeout(function () { btn.innerHTML = origHTML; }, 2000);
+      }).catch(function () {
+        // Fallback
+        prompt('Copy this URL:', url);
+      });
+    });
+
+    // Pause/Resume demo
+    document.getElementById('btn-pause-demo').addEventListener('click', function () {
+      demoPaused = !demoPaused;
+      var btn = document.getElementById('btn-pause-demo');
+      var status = document.querySelector('#preview-status');
+
+      if (demoPaused) {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Resume';
+        status.innerHTML = '<span class="status-dot paused"></span><span>Paused</span>';
+        if (demoInterval) {
+          clearInterval(demoInterval);
+          demoInterval = null;
+        }
+      } else {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Pause';
+        status.innerHTML = '<span class="status-dot active"></span><span>Live Preview</span>';
+        demoActive = false;
+        startDemo();
+      }
+    });
+
+    // Burst button
+    document.getElementById('btn-burst').addEventListener('click', function () {
+      demoHandlerInjected = false;
+      demoActive = false;
+      if (demoInterval) {
+        clearInterval(demoInterval);
+        demoInterval = null;
+      }
+      lastPreviewSrc = '';
+      refreshPreview();
+    });
+
+    // iframe load handler
+    previewFrame.addEventListener('load', function () {
+      demoHandlerInjected = false;
+      demoActive = false;
+      if (demoInterval) {
+        clearInterval(demoInterval);
+        demoInterval = null;
+      }
+      setTimeout(startDemo, 300);
+    });
+
+    // Initial preview
+    updateLayerURLDisplay();
+    updateLayerIndicators();
+    refreshPreview();
+    initConnectionStatus();
+  }
+
+  // Wait for DOM
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
