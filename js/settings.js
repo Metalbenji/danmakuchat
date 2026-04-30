@@ -11,6 +11,8 @@
     // Streamer.bot
     streamerBotServerAddress: '127.0.0.1',
     streamerBotServerPort: '8080',
+    // Preview
+    enableDemo: true,
     // General
     fontSize: 1,
     chatFontFamily: 'DM Sans',
@@ -140,6 +142,14 @@
           { key: 'streamerBotServerPort', label: 'Port', type: 'number', min: 1, max: 65535, placeholder: '8080' },
         ],
         extra: '<div class="connection-status"><span class="connection-dot" id="sb-status-dot"></span><span id="sb-status-text">Not connected</span></div>',
+      },
+      {
+        id: 'section-preview',
+        title: 'Preview',
+        icon: '👁️',
+        settings: [
+          { key: 'enableDemo', label: 'Demo Messages', type: 'toggle', tag: 'Preview' },
+        ],
       },
       {
         id: 'section-general',
@@ -808,7 +818,21 @@
       refreshPreview();
       updateLayerURLDisplay();
       updateLayerIndicators();
+      updatePreviewStatus();
     }, 300);
+  }
+
+  // ─── Update Preview Status ─────────────────
+  function updatePreviewStatus() {
+    var status = document.querySelector('#preview-status');
+    if (!status) return;
+    if (!config.enableDemo) {
+      status.innerHTML = '<span class="status-dot paused"></span><span>Demo Off</span>';
+    } else if (demoPaused) {
+      status.innerHTML = '<span class="status-dot paused"></span><span>Paused</span>';
+    } else {
+      status.innerHTML = '<span class="status-dot active"></span><span>Live Preview</span>';
+    }
   }
 
   // ─── Generate Overlay URL ──────────────────
@@ -821,7 +845,9 @@
       }
     });
     params.set('layer', layer);
-    params.set('demo', 'true');
+    if (config.enableDemo !== false) {
+      params.set('demo', 'true');
+    }
     params.set('preview', 'true');
 
     var basePath = window.location.pathname.replace('settings.html', 'overlay.html');
@@ -1026,7 +1052,7 @@
 
   window.startDemo = function () {
     var iframe = document.getElementById('preview-frame');
-    if (!iframe || demoPaused) return;
+    if (!iframe || demoPaused || !config.enableDemo) return;
 
     var attempts = 0;
     var maxAttempts = 30;
@@ -1159,18 +1185,17 @@
     document.getElementById('btn-pause-demo').addEventListener('click', function () {
       demoPaused = !demoPaused;
       var btn = document.getElementById('btn-pause-demo');
-      var status = document.querySelector('#preview-status');
 
       if (demoPaused) {
         btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Resume';
-        status.innerHTML = '<span class="status-dot paused"></span><span>Paused</span>';
+        updatePreviewStatus();
         if (demoInterval) {
           clearInterval(demoInterval);
           demoInterval = null;
         }
       } else {
         btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Pause';
-        status.innerHTML = '<span class="status-dot active"></span><span>Live Preview</span>';
+        updatePreviewStatus();
         demoActive = false;
         startDemo();
       }
@@ -1202,6 +1227,7 @@
     // Initial preview
     updateLayerURLDisplay();
     updateLayerIndicators();
+    updatePreviewStatus();
     refreshPreview();
     initConnectionStatus();
   }
