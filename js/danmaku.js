@@ -401,6 +401,7 @@ function spawnDanmaku(el, isEvent) {
     el.style.top = (lane * CFG.danmakuDensity) + 'px';
     el.style.animationDuration = baseDuration + 's';
 
+    var containerWidth = window.innerWidth;
     if (isRight) {
         // Left to right: start off-screen left, scroll right
         el.style.left = '-' + (elWidth + 20) + 'px';
@@ -408,8 +409,8 @@ function spawnDanmaku(el, isEvent) {
         el.style.animationName = 'danmaku-scroll-right';
     } else {
         // Right to left (default): start off-screen right, scroll left
-        el.style.right = '-' + (elWidth + 20) + 'px';
-        el.style.left = '';
+        el.style.left = (containerWidth + 20) + 'px';
+        el.style.right = '';
         el.style.animationName = 'danmaku-scroll';
     }
 
@@ -423,10 +424,16 @@ function spawnDanmaku(el, isEvent) {
 
 function cullOldDanmaku() {
     var items = danmakuLayer.querySelectorAll('.danmaku-item');
-    if (items.length >= CFG.maxDanmaku) {
-        var toRemove = items.length - CFG.maxDanmaku + 10;
-        for (var i = 0; i < toRemove; i++) {
-            if (items[i]) items[i].remove();
+    if (items.length < CFG.maxDanmaku) return;
+    var containerRect = danmakuLayer.getBoundingClientRect();
+    var toRemove = items.length - CFG.maxDanmaku + 10;
+    var removed = 0;
+    for (var i = 0; i < items.length && removed < toRemove; i++) {
+        var rect = items[i].getBoundingClientRect();
+        // Only cull if fully off-screen (with 50px buffer)
+        if (rect.right < containerRect.left - 50 || rect.left > containerRect.right + 50) {
+            items[i].remove();
+            removed++;
         }
     }
 }

@@ -390,7 +390,7 @@ html, body {
         transform: translateX(0);
     }
     to {
-        transform: translateX(calc(-100% - 100vw));
+        transform: translateX(calc(-100% - 100vw - 100px));
     }
 }
 
@@ -400,7 +400,7 @@ html, body {
         transform: translateX(0);
     }
     to {
-        transform: translateX(calc(100% + 100vw));
+        transform: translateX(calc(100% + 100vw + 100px));
     }
 }
 
