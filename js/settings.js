@@ -861,7 +861,21 @@
     }
 
     var basePath = window.location.pathname.replace('settings.html', 'overlay.html');
-    return basePath + '?' + params.toString();
+    var url = basePath + '?' + params.toString();
+
+    if (!forPreview) {
+      // For OBS: build absolute URL using the configured server address
+      var host = window.location.hostname;
+      var port = window.location.port;
+      // Use configured server address if different from current page host
+      if (config.streamerBotServerAddress && config.streamerBotServerAddress !== '127.0.0.1') {
+        host = config.streamerBotServerAddress;
+      }
+      // Use 8088 as default port (Docker nginx) if current page isn't on it
+      if (!port) port = '8088';
+      url = 'http://' + host + ':' + port + basePath + '?' + params.toString();
+    }
+    return url;
   }
 
   // ─── Update Layer URL Display ──────────────
