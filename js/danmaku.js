@@ -525,7 +525,7 @@ window.addEventListener("message", function(e) {
 
 // Built-in demo messages if ?demo=true is in the URL
 // Skip when in preview iframe — settings.js drives the demo via postMessage
-if (isDemo && !isPreview) {
+if (isDemo) {
     var demoChats = [
         { platform: 'twitch', username: 'NightOwl42', color: '#ff6b6b', text: 'This stream is amazing!' },
         { platform: 'twitch', username: 'PixelWizard', color: '#9147ff', text: 'LETS GOOO!' },
