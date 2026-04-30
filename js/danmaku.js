@@ -220,22 +220,30 @@ function buildPlatformBadge(platform) {
         streamelements: '#62c54e', streamlabs: '#32a0da', patreon: '#ff424d',
         kofi: '#49c2d1', tipeeestream: '#ff6b35', fourthwall: '#ffc400'
     };
+    var colorNames = {
+        twitch: 'purple platform', youtube: 'red platform', kick: 'green platform',
+        tiktok: 'pink platform', streamelements: 'green platform', streamlabs: 'blue platform',
+        patreon: 'red platform', kofi: 'teal platform', tipeeestream: 'orange platform',
+        fourthwall: 'yellow platform'
+    };
     var color = colors[platform] || '#888';
-    var dotSize = Math.round(8 * scale);
+    var logoSize = Math.round(18 * scale);
     if (style === 'logo') {
-        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + Math.round(18 * scale) + 'px;height:' + Math.round(18 * scale) + 'px;"></span>';
+        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + logoSize + 'px;height:' + logoSize + 'px;"></span>';
     }
     if (style === 'pill') {
-        // Platform colored dot
-        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;"><span style="width:' + dotSize + 'px;height:' + dotSize + 'px;border-radius:50%;background:' + color + ';display:inline-block;flex-shrink:0;"></span></span>';
+        // Colored dot, same size as logo
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;justify-content:center;width:' + logoSize + 'px;height:' + logoSize + 'px;flex-shrink:0;"><span style="width:' + logoSize + 'px;height:' + logoSize + 'px;border-radius:50%;background:' + color + ';display:block;"></span></span>';
     }
     if (style === 'name') {
-        // Platform name text
-        return '<span class="danmaku-platform" style="font-size:' + Math.round(11 * scale) + 'px;font-weight:600;display:inline-flex;align-items:center;flex-shrink:0;color:rgba(255,255,255,0.6);">' + platform + '</span>';
+        // Platform name with colored background pill
+        var name = platform.charAt(0).toUpperCase() + platform.slice(1);
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;background:' + color + ';border-radius:4px;padding:2px 6px;font-size:' + Math.round(10 * scale) + 'px;font-weight:600;color:#fff;">' + name + '</span>';
     }
     if (style === 'hider') {
-        // Platform name in platform color
-        return '<span class="danmaku-platform" style="font-size:' + Math.round(11 * scale) + 'px;font-weight:700;display:inline-flex;align-items:center;flex-shrink:0;color:' + color + ';text-shadow:0 0 6px ' + color + '80;">' + platform + '</span>';
+        // Color name instead of platform name (e.g. "purple platform")
+        var colorName = colorNames[platform] || (color + ' platform');
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;font-size:' + Math.round(10 * scale) + 'px;font-weight:600;color:' + color + ';">' + colorName + '</span>';
     }
     return '';
 }
