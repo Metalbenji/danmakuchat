@@ -842,7 +842,7 @@
   }
 
   // ─── Generate Overlay URL ──────────────────
-  function generateURL(layer) {
+  function generateURL(layer, forPreview) {
     var params = new URLSearchParams();
     var defaults = DEFAULTS;
     Object.keys(defaults).forEach(function (key) {
@@ -851,12 +851,14 @@
       }
     });
     params.set('layer', layer);
-    if (config.enableDemo !== false) {
-      params.set('demo', 'true');
+    if (forPreview) {
+      params.set('preview', 'true');
+      if (config.enableDemo !== false) {
+        params.set('demo', 'true');
+      }
+      // Cache-bust so browser never serves stale overlay.html
+      params.set('_t', String(Date.now()));
     }
-    params.set('preview', 'true');
-    // Cache-bust so browser never serves stale overlay.html
-    params.set('_t', String(Date.now()));
 
     var basePath = window.location.pathname.replace('settings.html', 'overlay.html');
     return basePath + '?' + params.toString();
@@ -867,10 +869,8 @@
     ['front', 'middle', 'back'].forEach(function (layer) {
       var el = document.getElementById('url-' + layer);
       if (el) {
-        var url = generateURL(layer);
-        // Remove cache-bust param from displayed URL (not needed in OBS)
-        var cleanUrl = url.replace(/[&?]_t=\d+/, '');
-        el.textContent = cleanUrl;
+        var url = generateURL(layer, false);
+        el.textContent = url;
       }
     });
   }
@@ -907,7 +907,7 @@
 
     // Generate a cache key so we don't reload needlessly
     var layers = isAll ? ['back', 'middle', 'front'] : [layer];
-    var newSrcKey = layers.map(function(l) { return generateURL(l); }).join('|');
+    var newSrcKey = layers.map(function(l) { return generateURL(l, true); }).join('|');
     if (newSrcKey === lastPreviewSrc) {
       // Just resize existing iframes
       var frames = previewContainer.querySelectorAll('.preview-iframe');
@@ -938,7 +938,7 @@
         var iframe = document.createElement('iframe');
         iframe.id = 'preview-frame-' + l;
         iframe.className = 'preview-iframe';
-        iframe.src = generateURL(l);
+        iframe.src = generateURL(l, true);
         iframe.allowTransparency = 'true';
         iframe.allow = 'autoplay';
         iframe.style.position = 'absolute';
@@ -961,7 +961,7 @@
       var iframe = document.createElement('iframe');
       iframe.id = 'preview-frame';
       iframe.className = 'preview-iframe';
-      iframe.src = generateURL(layer);
+      iframe.src = generateURL(layer, true);
       iframe.allowTransparency = 'true';
       iframe.allow = 'autoplay';
       iframe.style.width = w + 'px';
@@ -1230,17 +1230,15 @@
 
     // Copy OBS URL button
     document.getElementById('btn-export').addEventListener('click', function () {
-      var url = generateURL('middle');
-      // Remove cache-bust and preview params for OBS URL
-      var obsUrl = url.replace(/[&?]_t=\d+/, '').replace(/[&?]preview=true/, '');
-      navigator.clipboard.writeText(obsUrl).then(function () {
+      var url = generateURL('middle', false);
+      navigator.clipboard.writeText(url).then(function () {
         var btn = document.getElementById('btn-export');
         var origHTML = btn.innerHTML;
         btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> <span class="btn-text">Copied!</span>';
         setTimeout(function () { btn.innerHTML = origHTML; }, 2000);
       }).catch(function () {
         // Fallback
-        prompt('Copy this URL:', obsUrl);
+        prompt('Copy this URL:', url);
       });
     });
 
