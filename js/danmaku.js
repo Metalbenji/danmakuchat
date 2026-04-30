@@ -58,7 +58,7 @@ const CFG = {
     frontLayerGlow: getURLParam("frontLayerGlow", true),
     // Event Messages
     eventStyle: getURLParam("eventStyle", "solid"),
-    eventOpacity: Number(getURLParam("eventOpacity", 0.7)),
+    eventOpacity: Number(getURLParam("eventOpacity", 1)),
     eventFontSize: getURLParam("eventFontSize", "larger"),
     eventDurationBonus: Number(getURLParam("eventDurationBonus", 2)),
     eventPaddingX: Number(getURLParam("eventPaddingX", 28)),

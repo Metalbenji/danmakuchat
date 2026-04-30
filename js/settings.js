@@ -60,7 +60,7 @@
     frontLayerGlow: true,
     // Event Messages
     eventStyle: 'solid',
-    eventOpacity: 0.7,
+    eventOpacity: 1,
     eventFontSize: 'larger',
     eventDurationBonus: 2,
     eventPaddingX: 28,
