@@ -876,7 +876,9 @@
 
       if (window.location.protocol === 'file:') {
         // Running from local files — use file:/// path (no Docker needed)
-        url = 'file:///' + window.location.pathname.replace(/^[A-Za-z]:/, function(m) { return m.toUpperCase(); }).replace('\\', '/').replace('settings.html', 'overlay.html') + '?' + params.toString();
+        // pathname is like "/C:/Users/..." so prefix with "file://" not "file:///"
+        var pathname = window.location.pathname.replace(/\\/g, '/').replace('settings.html', 'overlay.html');
+        url = 'file://' + pathname + '?' + params.toString();
       } else {
         // Running from Docker/web server — use http:// URL
         var host = window.location.hostname;
