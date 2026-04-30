@@ -17,46 +17,71 @@ function getURLParam(param, defaultValue) {
 }
 
 let streamerBotClientActive = null;
+let streamerBotClient = null;
 
 function streamerBotConnect() {
+    if (typeof StreamerbotClient === 'undefined') {
+        console.warn('[DanmakuChat] Streamer.bot client library not loaded');
+        return null;
+    }
+
     if (streamerBotClientActive) {
         try {
             streamerBotClientActive.disconnect?.();
             streamerBotClientActive = null;
         } catch (err) {
-            console.error("[DanmakuChat] Error closing previous client:", err);
+            console.error('[DanmakuChat] Error closing previous client:', err);
         }
     }
 
-    streamerBotClientActive = new StreamerbotClient({
-        host: streamerBotServerAddress,
-        port: streamerBotServerPort,
-        onConnect: () => {
-            console.log("[DanmakuChat] Connected to Streamer.bot");
-        },
-        onDisconnect: () => {
-            console.log("[DanmakuChat] Disconnected from Streamer.bot");
-        }
-    });
+    try {
+        streamerBotClientActive = new StreamerbotClient({
+            host: streamerBotServerAddress,
+            port: streamerBotServerPort,
+            onConnect: () => {
+                console.log('[DanmakuChat] Connected to Streamer.bot');
+            },
+            onDisconnect: () => {
+                console.log('[DanmakuChat] Disconnected from Streamer.bot');
+            }
+        });
 
-    return streamerBotClientActive;
+        return streamerBotClientActive;
+    } catch (err) {
+        console.warn('[DanmakuChat] Failed to create Streamer.bot client:', err);
+        return null;
+    }
 }
 
-const streamerBotClient = streamerBotConnect();
+try {
+    streamerBotClient = streamerBotConnect();
+} catch (err) {
+    console.warn('[DanmakuChat] Streamer.bot init failed:', err);
+    streamerBotClient = null;
+}
 
 async function getStreamerInfo() {
-    const request = await streamerBotClient.getBroadcaster();
-    return request;
+    if (!streamerBotClient) return null;
+    try {
+        return await streamerBotClient.getBroadcaster();
+    } catch (err) {
+        console.warn('[DanmakuChat] getStreamerInfo failed:', err);
+        return null;
+    }
 }
 
 function registerPlatformHandlersToStreamerBot(handlers, logPrefix = '') {
     if (!streamerBotClient) return;
-    for (const [event, handler] of Object.entries(handlers)) {
-        streamerBotClient.on(event, (...args) => {
-            if (logPrefix) {
-                console.debug(`${logPrefix} ${event}`, args[0]);
-            }
-            handler(...args);
-        });
+    try {
+        for (const [event, handler] of Object.entries(handlers)) {
+            streamerBotClient.on(event, (...args) => {
+                if (logPrefix) {
+                    console.debug(`${logPrefix} ${event}`, args[0]);
+                }
+                handler(...args);
+            });
+        }
+    } catch (err) {
+        console.warn('[DanmakuChat] Failed to register platform handlers:', err);
     }
 }
