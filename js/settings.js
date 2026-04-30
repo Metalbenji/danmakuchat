@@ -864,7 +864,16 @@
     var url = basePath + '?' + params.toString();
 
     if (!forPreview) {
-      // For OBS: build an absolute URL
+      // For OBS: always include server address/port so overlay connects
+      // to the right Streamer.bot instance
+      if (params.get('streamerBotServerAddress') === null) {
+        params.set('streamerBotServerAddress', config.streamerBotServerAddress);
+      }
+      if (params.get('streamerBotServerPort') === null) {
+        params.set('streamerBotServerPort', config.streamerBotServerPort);
+      }
+      url = basePath + '?' + params.toString();
+
       if (window.location.protocol === 'file:') {
         // Running from local files — use file:/// path (no Docker needed)
         url = 'file:///' + window.location.pathname.replace(/^[A-Za-z]:/, function(m) { return m.toUpperCase(); }).replace('\\', '/').replace('settings.html', 'overlay.html') + '?' + params.toString();
