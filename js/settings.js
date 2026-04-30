@@ -127,7 +127,6 @@
   let demoPaused = false;
   let demoActive = false;
   let demoInterval = null;
-  let demoHandlerInjected = false;
   let lastPreviewSrc = '';
 
   // ─── Build Settings Sections ────────────────
@@ -1019,37 +1018,7 @@
     { platform: 'tiktok', type: 'sub', username: 'TikTokSub', color: '#ff0050', action: 'subscribed!' },
   ];
 
-  function injectDemoHandler(iframe) {
-    if (demoHandlerInjected) return;
-    try {
-      var doc = iframe.contentDocument || iframe.contentWindow.document;
-      if (!doc || !doc.head) return false;
-
-      var script = doc.createElement('script');
-      script.textContent = [
-        'window.addEventListener("message", function(e) {',
-        '  if (!e.data || !e.data.__danmakuDemo) return;',
-        '  var msg = e.data;',
-        '  if (msg.msgType === "chat") {',
-        '    if (typeof createDanmakuChat === "function") {',
-        '      createDanmakuChat(msg.platform, msg.data);',
-        '    }',
-        '  } else if (msg.msgType === "event") {',
-        '    if (typeof createDanmakuEvent === "function") {',
-        '      createDanmakuEvent(msg.platform, msg.data);',
-        '    }',
-        '  }',
-        '});'
-      ].join('\n');
-
-      doc.head.appendChild(script);
-      demoHandlerInjected = true;
-      return true;
-    } catch (ex) {
-      return false;
-    }
-  }
-
+  // danmaku.js already has a postMessage listener — no injection needed
   window.startDemo = function () {
     var iframe = document.getElementById('preview-frame');
     if (!iframe || demoPaused || !config.enableDemo) return;
@@ -1064,12 +1033,7 @@
         return;
       }
 
-      var injected = injectDemoHandler(iframe);
-      if (!injected) {
-        if (attempts < maxAttempts) setTimeout(tryInit, 300);
-        return;
-      }
-
+      // danmaku.js message listener is built-in — just start sending
       if (demoActive) return;
       demoActive = true;
       sendDemoMessage();
@@ -1203,7 +1167,6 @@
 
     // Burst button
     document.getElementById('btn-burst').addEventListener('click', function () {
-      demoHandlerInjected = false;
       demoActive = false;
       if (demoInterval) {
         clearInterval(demoInterval);
@@ -1215,7 +1178,6 @@
 
     // iframe load handler
     previewFrame.addEventListener('load', function () {
-      demoHandlerInjected = false;
       demoActive = false;
       if (demoInterval) {
         clearInterval(demoInterval);
