@@ -30,15 +30,35 @@
 <body>
     <div id="danmaku-layer"></div>
 
-    <!-- Sanitizer -->
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
-
-    <!-- Streamer.bot Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@streamerbot/client@1.12.1/dist/streamerbot-client.min.js"></script>
-
-    <!-- Core -->
+    <!-- Core (loads immediately, no CDN dependency) -->
     <script src="js/sb.js"></script>
     <script src="js/danmaku.js"></script>
+
+    <!-- CDN Enhancement (async, non-blocking) -->
+    <script>
+    (function() {
+        var dompurify = document.createElement('script');
+        dompurify.src = 'https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js';
+        dompurify.onerror = function() { console.warn('[DanmakuChat] DOMPurify CDN failed to load'); };
+        document.head.appendChild(dompurify);
+
+        var sbClient = document.createElement('script');
+        sbClient.src = 'https://cdn.jsdelivr.net/npm/@streamerbot/client@1.12.1/dist/streamerbot-client.min.js';
+        sbClient.onerror = function() { console.warn('[DanmakuChat] Streamer.bot client CDN failed to load'); };
+        sbClient.onload = function() {
+            if (typeof streamerBotConnect === 'function') {
+                try { streamerBotClient = streamerBotConnect(); } catch(e) {
+                    console.warn('[DanmakuChat] Delayed SB connect failed:', e);
+                }
+                // Re-register platform handlers now that client is available
+                if (typeof registerAllPlatformHandlers === 'function') {
+                    registerAllPlatformHandlers();
+                }
+            }
+        };
+        document.head.appendChild(sbClient);
+    })();
+    </script>
 
     <!-- Platform Modules -->
     <script src="js/modules/twitch/module.js"></script>

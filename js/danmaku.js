@@ -182,11 +182,14 @@ function spawnDanmaku(el) {
     const duration = danmakuSpeed; // seconds
     const lane = getAvailableLane(duration);
 
+    // Append to DOM first so offsetWidth is accurate
+    el.style.visibility = 'hidden';
+    danmakuLayer.appendChild(el);
+
     el.style.top = `${lane * danmakuDensity}px`;
     el.style.right = `-${el.offsetWidth + 20}px`;
     el.style.animationDuration = `${duration}s`;
-
-    danmakuLayer.appendChild(el);
+    el.style.visibility = '';
 
     // Remove after animation completes
     el.addEventListener('animationend', () => {
