@@ -352,8 +352,8 @@ html, body {
 }
 
 .danmaku-item.event .danmaku-platform img {
-    width: 20px;
-    height: 20px;
+    width: var(--dm-icon-size, 20px);
+    height: var(--dm-icon-size, 20px);
     object-fit: contain;
 }
 

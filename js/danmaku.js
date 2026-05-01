@@ -22,7 +22,7 @@ const CFG = {
     // Direction
     direction: getURLParam("direction", "left"),
     // Speed & Density
-    danmakuSpeed: Number(getURLParam("danmakuSpeed", 8)),
+    danmakuSpeed: Number(getURLParam("danmakuSpeed", 14)),
     speedRandomness: Number(getURLParam("speedRandomness", 2)),
     danmakuDensity: Number(getURLParam("danmakuDensity", 28)),
     maxDanmaku: Number(getURLParam("maxDanmaku", 80)),
@@ -52,7 +52,7 @@ const CFG = {
     depthMaxScale: Number(getURLParam("depthMaxScale", 1.3)),
     depthMinOpacity: Number(getURLParam("depthMinOpacity", 0.3)),
     depthMaxOpacity: Number(getURLParam("depthMaxOpacity", 1.0)),
-    backLayerBlur: Number(getURLParam("backLayerBlur", 1.5)),
+    backLayerBlur: Number(getURLParam("backLayerBlur", 1)),
     backLayerOpacity: Number(getURLParam("backLayerOpacity", 0.7)),
     frontLayerGlow: getURLParam("frontLayerGlow", true),
     // Event Messages

@@ -23,7 +23,7 @@
     use24h: false,
     direction: 'left',
     // Appearance - Speed & Density
-    danmakuSpeed: 8,
+    danmakuSpeed: 14,
     speedRandomness: 2,
     danmakuDensity: 28,
     maxDanmaku: 80,
@@ -54,7 +54,7 @@
     depthMaxScale: 1.3,
     depthMinOpacity: 0.3,
     depthMaxOpacity: 1.0,
-    backLayerBlur: 1.5,
+    backLayerBlur: 1,
     backLayerOpacity: 0.7,
     frontLayerGlow: true,
     // Event Messages
