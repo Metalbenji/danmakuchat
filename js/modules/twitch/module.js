@@ -190,10 +190,7 @@ async function twitchChatMessage(data) {
     if (!data) return;
 
     var user = _twitchUser(data);
-    if (!user) {
-        _sbDebug('TWITCH: no user found in data');
-        return;
-    }
+    if (!user) return;
 
     var userLogin = user.login || '';
     if (ignoreUserList.includes(userLogin.toLowerCase())) return;
@@ -206,7 +203,6 @@ async function twitchChatMessage(data) {
         var badgeList = await getTwitchBadges(user.badges);
         var messageFromParts = await getTwitchMessageFromParts(data.parts);
 
-        _sbDebug('TWITCH: calling createDanmaku [' + (user.displayName || userLogin) + '] ' + text);
         createDanmakuChat('twitch', {
             text: text,
             messageHtml: safeSanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] }),
@@ -216,7 +212,6 @@ async function twitchChatMessage(data) {
             badges: badgeList
         });
     } catch(err) {
-        _sbDebug('TWITCH ERROR: ' + (err.message || err));
         console.error('[Twitch] twitchChatMessage error:', err);
     }
 }

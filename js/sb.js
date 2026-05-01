@@ -65,7 +65,7 @@ function _sbEmit(eventName, data) {
 var _sbDebugEl = null;
 var _sbDebugTimeout = null;
 var _sbDebugLog = [];
-var _sbMaxLogLines = 8;
+var _sbMaxLogLines = 3;
 
 function _sbInitDebug() {
     var el = document.createElement('div');
@@ -83,7 +83,7 @@ function _sbDebug(msg) {
     _sbDebugLog.push(msg);
     if (_sbDebugLog.length > _sbMaxLogLines) _sbDebugLog.shift();
     _sbDebugEl.textContent = _sbDebugLog.join('\n');
-    // Auto-hide after 8s of no updates (only when connected)
+    // Auto-hide after 4s of no updates (only when connected)
     if (_sbDebugTimeout) clearTimeout(_sbDebugTimeout);
     _sbDebugTimeout = setTimeout(function() {
         if (_sbDebugEl && _sbConnected && _sbHelloReceived) {
@@ -91,7 +91,7 @@ function _sbDebug(msg) {
             _sbDebugEl.style.opacity = '0';
             setTimeout(function() { if (_sbDebugEl) _sbDebugEl.remove(); _sbDebugEl = null; }, 1000);
         }
-    }, 8000);
+    }, 4000);
 }
 
 // ─── Raw WebSocket Connection ─────────────────
@@ -109,22 +109,19 @@ var _sbMaxReconnectDelay = 30000;
 
 function _sbConnect() {
     var url = 'ws://' + streamerBotServerAddress + ':' + streamerBotServerPort + '/';
-    console.log('[DanmakuChat] Connecting to Streamer.bot at', url);
-    _sbDebug('Connecting to ' + url + '...');
+    _sbDebug('Connecting...');
     _sbHelloReceived = false;
 
     try {
         _sbWebSocket = new WebSocket(url);
     } catch(err) {
-        console.error('[DanmakuChat] Failed to create WebSocket:', err);
         _sbDebug('WebSocket ERROR: ' + err.message);
         _sbScheduleReconnect();
         return;
     }
 
     _sbWebSocket.onopen = function() {
-        console.log('[DanmakuChat] WebSocket opened, waiting for Hello...');
-        _sbDebug('Connected, waiting for Hello...');
+        _sbDebug('Waiting for Hello...');
         // Do NOT subscribe yet — wait for the Hello message from the server
     };
 
@@ -133,9 +130,7 @@ function _sbConnect() {
             if (!event.data || typeof event.data !== 'string') return;
             var msg = JSON.parse(event.data);
 
-            // Only log to console, NOT to debug overlay (too noisy)
             var msgType = msg.request || (msg.event ? msg.event.source + '.' + msg.event.type : '?');
-            console.log('[DanmakuChat] Received:', msgType, msg);
 
             // ── Step 1: Handle Hello message ──
             // Server sends this first after connection opens.
@@ -145,8 +140,7 @@ function _sbConnect() {
                 _sbConnected = true;
                 _sbReconnectDelay = 2000;
                 var name = msg.info ? (msg.info.name + ' v' + msg.info.version) : 'Streamer.bot';
-                console.log('[DanmakuChat] Hello from', name);
-                _sbDebug('Hello from ' + name + ' — subscribing...');
+                _sbDebug('Hello from ' + name);
 
                 // Wait a moment then subscribe (same as Streamgoals does)
                 setTimeout(function() {
@@ -162,10 +156,8 @@ function _sbConnect() {
                     if (msg.events) {
                         for (var k in msg.events) count += msg.events[k].length;
                     }
-                    console.log('[DanmakuChat] Subscription confirmed: ' + count + ' events');
-                    _sbDebug('Subscribed! (' + count + ' events) Waiting for chat...');
+                    _sbDebug('Subscribed!');
                 } else if (msg.error) {
-                    console.error('[DanmakuChat] Subscription failed:', msg.error);
                     _sbDebug('Subscribe ERROR: ' + msg.error);
                 }
                 return;
@@ -173,7 +165,6 @@ function _sbConnect() {
 
             // ── Step 3: Handle other request responses ──
             if (msg.request && msg.id) {
-                console.log('[DanmakuChat] Response for', msg.request, ':', msg);
                 return;
             }
 
@@ -216,7 +207,7 @@ function _sbConnect() {
     };
 
     _sbWebSocket.onclose = function(event) {
-        console.log('[DanmakuChat] Disconnected (code: ' + event.code + ')');
+
         _sbConnected = false;
         _sbHelloReceived = false;
         _sbWebSocket = null;
@@ -225,8 +216,7 @@ function _sbConnect() {
     };
 
     _sbWebSocket.onerror = function(err) {
-        console.warn('[DanmakuChat] WebSocket error');
-        _sbDebug('WebSocket connection error');
+        _sbDebug('WebSocket error');
         // onclose fires after onerror
     };
 }
@@ -271,19 +261,14 @@ function _sbSubscribe() {
 
     try {
         _sbWebSocket.send(JSON.stringify(subscribeMsg));
-        var count = 0;
-        for (var k in events) count += events[k].length;
-        console.log('[DanmakuChat] Sending subscription for ' + count + ' events:', JSON.stringify(events));
-        _sbDebug('Subscribing to ' + count + ' events...');
+        _sbDebug('Subscribing...');
     } catch(err) {
-        console.warn('[DanmakuChat] Failed to send subscription:', err);
         _sbDebug('Subscribe failed: ' + err.message);
     }
 }
 
 function _sbScheduleReconnect() {
     if (_sbReconnectTimer) return;
-    console.log('[DanmakuChat] Reconnecting in ' + Math.round(_sbReconnectDelay / 1000) + 's...');
     _sbReconnectTimer = setTimeout(function() {
         _sbReconnectTimer = null;
         _sbConnect();
@@ -331,9 +316,7 @@ var registerPlatformHandlersToStreamerBot = function(handlers, logPrefix) {
             if (handlers.hasOwnProperty(event)) {
                 (function(evtKey) {
                     _sbOn(evtKey, function(response) {
-                        if (logPrefix) {
-                            console.debug(logPrefix + ' ' + evtKey, response.data);
-                        }
+
                         handlers[evtKey](response);
                     });
                 })(event);
@@ -345,7 +328,7 @@ var registerPlatformHandlersToStreamerBot = function(handlers, logPrefix) {
             _sbSubscribe();
         }
     } catch(err) {
-        console.warn('[DanmakuChat] Failed to register platform handlers:', err);
+        // ignore
     }
 };
 
@@ -361,7 +344,6 @@ async function getStreamerInfo() {
         var data = await resp.json();
         return data;
     } catch(err) {
-        console.warn('[DanmakuChat] getStreamerInfo failed (this is OK from file://):', err.message);
         return null;
     }
 }
@@ -374,7 +356,6 @@ setTimeout(function() {
     try {
         _sbConnect();
     } catch(err) {
-        console.warn('[DanmakuChat] Streamer.bot init failed:', err);
         _sbDebug('Init failed: ' + err.message);
     }
 }, 0);
