@@ -26,6 +26,21 @@
     <link href="js/modules/tipeeestream/module.css" rel="stylesheet">
     <link href="js/modules/kofi/module.css" rel="stylesheet">
     <link href="js/modules/fourthwall/module.css" rel="stylesheet">
+
+    <!-- Cache-bust local CSS in preview mode so slider changes apply immediately -->
+    <script>
+    (function(){
+        var p = new URLSearchParams(location.search);
+        if (p.has('_t')) {
+            var ts = p.get('_t');
+            document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l) {
+                if (l.href && l.href.indexOf('http') !== 0 && l.href.indexOf('fonts.googleapis') === -1) {
+                    l.href += (l.href.indexOf('?') > -1 ? '&' : '?') + '_t=' + ts;
+                }
+            });
+        }
+    })();
+    </script>
 </head>
 <body>
     <div id="danmaku-layer"></div>
