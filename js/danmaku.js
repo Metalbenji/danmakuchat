@@ -201,16 +201,35 @@ function getAvailableLane(duration) {
 }
 
 // ---- Layer Routing ----
-function shouldShowMessage(type) {
+// Deterministic hash so all OBS sources agree which layer each message goes to.
+// Without this, each source independently randomises and the same message
+// appears on every layer (or gets split inconsistently).
+
+function _hashStr(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return (hash >>> 0) / 4294967296; // normalise to 0–1
+}
+
+function _getAssignedLayer(username, text) {
+    var seed = username + '|' + text + '|' + Date.now();
+    var r = _hashStr(seed);
+    if (r < CFG.frontChance) return 'front';
+    if (r < CFG.frontChance + CFG.backChance) return 'back';
+    return 'middle';
+}
+
+function shouldShowMessage(type, data) {
     // Events only show on front layer
     if (type === 'event') {
         return CFG.LAYER === 'front';
     }
-    // Chat messages: always show on whatever layer is loaded.
-    // When multiple layers are active (front/middle/back browser sources),
-    // the random routing splits them — but each source needs to show its share.
-    // Since each browser source loads a SINGLE layer, pass everything through.
-    return true;
+    // Chat: deterministically route to a layer
+    var username = (data && (data.username || data.user || '')) || '';
+    var text = (data && (data.text || data.message || '')) || '';
+    return _getAssignedLayer(username, text) === CFG.LAYER;
 }
 
 // ---- Platform badge HTML ----
@@ -255,7 +274,7 @@ function buildPlatformBadge(platform) {
 // ---- Danmaku Creation ----
 
 function createDanmakuChat(platform, data) {
-    if (!shouldShowMessage('chat')) return;
+    if (!shouldShowMessage('chat', data)) return;
 
     // Filtering
     if (CFG.ignoreCommands && data.text && data.text.startsWith('!')) return;
