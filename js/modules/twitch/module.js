@@ -125,20 +125,23 @@ async function getTwitchMessageFromParts(parts) {
 
 async function twitchChatMessage(data) {
     if (showTwitchMessages === false) return;
-    if (ignoreUserList.includes(data.user.login)) return;
-    if (data.text.startsWith('!') && ignoreCommands === true) return;
+    if (!data || !data.user) return;
+    var userLogin = data.user.login || '';
+    if (ignoreUserList.includes(userLogin.toLowerCase())) return;
+    var text = data.text || '';
+    if (text.startsWith('!') && ignoreCommands === true) return;
 
     const [avatarImage, badgeList] = await Promise.all([
-        getTwitchAvatar(data.user.login),
+        getTwitchAvatar(userLogin),
         getTwitchBadges(data.user.badges)
     ]);
 
     const messageFromParts = await getTwitchMessageFromParts(data.parts);
 
     createDanmakuChat('twitch', {
-        text: data.text,
+        text: text,
         messageHtml: DOMPurify.sanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] }),
-        username: data.user.name,
+        username: data.user.name || userLogin,
         color: data.user.color,
         avatar: avatarImage,
         badges: badgeList
