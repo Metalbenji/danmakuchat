@@ -345,16 +345,31 @@ html, body {
 }
 
 /* ---- Event Elements ---- */
+
+/* Event icon sizing — covers ALL icon types with !important
+   to guarantee the slider value applies regardless of specificity clashes
+   in OBS Chromium or any module-level CSS overrides. */
+.danmaku-item.event .danmaku-platform img,
+.danmaku-item.event .danmaku-badges img,
+.danmaku-item.event .danmaku-avatar,
+.danmaku-item.event .danmaku-avatar-inline {
+    width: var(--dm-icon-size, 20px) !important;
+    height: var(--dm-icon-size, 20px) !important;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
 .danmaku-item.event .danmaku-platform {
     display: flex;
     align-items: center;
     flex-shrink: 0;
 }
 
-.danmaku-item.event .danmaku-platform img {
-    width: var(--dm-icon-size, 20px);
-    height: var(--dm-icon-size, 20px);
-    object-fit: contain;
+.danmaku-item.event .danmaku-badges {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
 }
 
 .danmaku-item.event .danmaku-username {
