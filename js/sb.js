@@ -22,6 +22,7 @@ function getURLParam(param, defaultValue) {
 var _sbHandlers = {};
 var _sbConnected = false;
 var _sbEventCount = 0;
+var _sbHelloReceived = false;
 
 function _sbOn(eventName, handler) {
     if (!_sbHandlers[eventName]) {
@@ -57,7 +58,7 @@ function _sbInitDebug() {
     el.id = 'sb-debug';
     el.style.cssText = 'position:fixed;top:4px;left:4px;z-index:99999;font:11px monospace;' +
         'color:#0f0;background:#0008;padding:3px 6px;border-radius:3px;pointer-events:none;' +
-        'max-width:90vw;word-break:break-all;line-height:1.4;';
+        'max-width:90vw;word-break:break-all;line-height:1.4;white-space:pre-wrap;';
     el.textContent = 'Connecting...';
     document.body.appendChild(el);
     _sbDebugEl = el;
@@ -66,10 +67,10 @@ function _sbInitDebug() {
 function _sbDebug(msg) {
     if (!_sbDebugEl) _sbInitDebug();
     _sbDebugEl.textContent = msg;
-    // Auto-hide after 10s of no updates
+    // Auto-hide after 10s of no updates (only when connected)
     if (_sbDebugTimeout) clearTimeout(_sbDebugTimeout);
     _sbDebugTimeout = setTimeout(function() {
-        if (_sbDebugEl && _sbConnected) {
+        if (_sbDebugEl && _sbConnected && _sbHelloReceived) {
             _sbDebugEl.style.transition = 'opacity 1s';
             _sbDebugEl.style.opacity = '0';
             setTimeout(function() { if (_sbDebugEl) _sbDebugEl.remove(); _sbDebugEl = null; }, 1000);
@@ -78,6 +79,12 @@ function _sbDebug(msg) {
 }
 
 // ─── Raw WebSocket Connection ─────────────────
+// Protocol flow (matches Streamer.bot docs & working widgets):
+//   1. Client connects to ws://host:port/
+//   2. Server sends Hello: { "request": "Hello", "id": "...", "info": {...} }
+//   3. Client sends Subscribe: { "request": "Subscribe", "id": "...", "events": {...} }
+//   4. Server responds: { "id": "...", "status": "ok", "events": {...} }
+//   5. Events flow: { "timeStamp": "...", "event": { "source": "Twitch", "type": "ChatMessage" }, "data": {...} }
 
 var _sbWebSocket = null;
 var _sbReconnectTimer = null;
@@ -85,10 +92,10 @@ var _sbReconnectDelay = 2000;
 var _sbMaxReconnectDelay = 30000;
 
 function _sbConnect() {
-    // Streamer.bot WebSocket endpoint is "/" (root), NOT "/Socket"
     var url = 'ws://' + streamerBotServerAddress + ':' + streamerBotServerPort + '/';
     console.log('[DanmakuChat] Connecting to Streamer.bot at', url);
     _sbDebug('Connecting to ' + url + '...');
+    _sbHelloReceived = false;
 
     try {
         _sbWebSocket = new WebSocket(url);
@@ -100,48 +107,69 @@ function _sbConnect() {
     }
 
     _sbWebSocket.onopen = function() {
-        console.log('[DanmakuChat] Connected to Streamer.bot');
-        _sbConnected = true;
-        _sbReconnectDelay = 2000;
-
-        // Subscribe to all events we care about
-        _sbSubscribe();
+        console.log('[DanmakuChat] WebSocket opened, waiting for Hello...');
+        _sbDebug('Connected, waiting for Hello...');
+        // Do NOT subscribe yet — wait for the Hello message from the server
     };
 
     _sbWebSocket.onmessage = function(event) {
         try {
             if (!event.data || typeof event.data !== 'string') return;
             var msg = JSON.parse(event.data);
+            console.log('[DanmakuChat] Received:', msg.request || (msg.event ? msg.event.source + '.' + msg.event.type : 'unknown'));
 
-            // Handle subscription response (has "status" and "id")
-            if (msg.status) {
-                if (msg.status === 'ok') {
-                    console.log('[DanmakuChat] Subscription confirmed');
-                    _sbDebug('Connected & subscribed');
-                } else if (msg.status === 'error') {
-                    console.warn('[DanmakuChat] Server error:', msg);
-                    _sbDebug('Error: ' + (msg.message || JSON.stringify(msg)));
+            // ── Step 1: Handle Hello message ──
+            // Server sends this first after connection opens.
+            // We MUST wait for it before subscribing.
+            if (msg.request === 'Hello') {
+                _sbHelloReceived = true;
+                _sbConnected = true;
+                _sbReconnectDelay = 2000;
+                var name = msg.info ? (msg.info.name + ' v' + msg.info.version) : 'Streamer.bot';
+                console.log('[DanmakuChat] Hello from', name);
+                _sbDebug('Hello from ' + name + ' — subscribing...');
+
+                // Wait a moment then subscribe (same as Streamgoals does)
+                setTimeout(function() {
+                    _sbSubscribe();
+                }, 500);
+                return;
+            }
+
+            // ── Step 2: Handle Subscribe response ──
+            if (msg.request === 'Subscribe') {
+                if (msg.status === 'ok' || msg.id) {
+                    var count = 0;
+                    if (msg.events) {
+                        for (var k in msg.events) count += msg.events[k].length;
+                    }
+                    console.log('[DanmakuChat] Subscription confirmed: ' + count + ' events');
+                    _sbDebug('Subscribed! (' + count + ' events) Waiting for chat...');
+                } else if (msg.error) {
+                    console.error('[DanmakuChat] Subscription failed:', msg.error);
+                    _sbDebug('Subscribe ERROR: ' + msg.error);
                 }
                 return;
             }
 
-            // Handle incoming events
-            // Streamer.bot format:
-            // {
-            //   "timeStamp": "...",
-            //   "event": { "source": "Twitch", "type": "ChatMessage" },
-            //   "data": { ... event payload ... }
-            // }
+            // ── Step 3: Handle other request responses ──
+            if (msg.request && msg.id) {
+                console.log('[DanmakuChat] Response for', msg.request, ':', msg);
+                return;
+            }
+
+            // ── Step 4: Handle actual events ──
+            // Format: { "timeStamp": "...", "event": { "source": "Twitch", "type": "ChatMessage" }, "data": {...} }
             if (msg.event && msg.event.source && msg.event.type) {
                 _sbEventCount++;
-                var sourceType = msg.event.source;  // STRING, e.g. "Twitch"
-                var eventType = msg.event.type;      // STRING, e.g. "ChatMessage"
+                var sourceType = msg.event.source;  // STRING: "Twitch", "YouTube", etc.
+                var eventType = msg.event.type;      // STRING: "ChatMessage", "Follow", etc.
                 var handlerKey = sourceType + '.' + eventType;
 
-                // Build response matching what @streamerbot/client provided
-                // The callback expects response.data to be the event payload
+                // Build response object matching what @streamerbot/client provided
+                // The handlers expect response.data to be the event payload
                 var response = {
-                    data: msg.data,           // Event payload is at msg.data
+                    data: msg.data,           // Event payload is at top-level msg.data
                     event: handlerKey,
                     source: sourceType
                 };
@@ -149,7 +177,7 @@ function _sbConnect() {
                 _sbEmit(handlerKey, response);
                 _sbEmit('Raw.Event', msg);
 
-                // Show first few events in debug
+                // Show first few events in debug overlay
                 if (_sbEventCount <= 3) {
                     _sbDebug('Event #' + _sbEventCount + ': ' + handlerKey);
                 } else if (_sbEventCount === 4) {
@@ -164,6 +192,7 @@ function _sbConnect() {
     _sbWebSocket.onclose = function(event) {
         console.log('[DanmakuChat] Disconnected (code: ' + event.code + ')');
         _sbConnected = false;
+        _sbHelloReceived = false;
         _sbWebSocket = null;
         _sbDebug('Disconnected (code ' + event.code + ') — retrying...');
         _sbScheduleReconnect();
@@ -202,8 +231,8 @@ function _sbSubscribe() {
     });
 
     if (Object.keys(events).length === 0) {
-        // No handlers yet — retry
-        _sbDebug('Waiting for handlers to register...');
+        // No handlers registered yet — retry shortly
+        _sbDebug('No handlers yet, retrying...');
         setTimeout(_sbSubscribe, 300);
         return;
     }
@@ -218,8 +247,8 @@ function _sbSubscribe() {
         _sbWebSocket.send(JSON.stringify(subscribeMsg));
         var count = 0;
         for (var k in events) count += events[k].length;
-        console.log('[DanmakuChat] Subscribed to ' + count + ' events:', JSON.stringify(events));
-        _sbDebug('Subscribed to ' + count + ' events');
+        console.log('[DanmakuChat] Sending subscription for ' + count + ' events:', JSON.stringify(events));
+        _sbDebug('Subscribing to ' + count + ' events...');
     } catch(err) {
         console.warn('[DanmakuChat] Failed to send subscription:', err);
         _sbDebug('Subscribe failed: ' + err.message);
@@ -248,6 +277,7 @@ function _sbDisconnect() {
         _sbWebSocket = null;
     }
     _sbConnected = false;
+    _sbHelloReceived = false;
 }
 
 // ─── Public API (drop-in replacement) ─────────
@@ -284,8 +314,8 @@ var registerPlatformHandlersToStreamerBot = function(handlers, logPrefix) {
             }
         }
 
-        // If already connected, re-subscribe with all registered events
-        if (_sbConnected) {
+        // If already connected AND Hello received, re-subscribe
+        if (_sbConnected && _sbHelloReceived) {
             _sbSubscribe();
         }
     } catch(err) {
