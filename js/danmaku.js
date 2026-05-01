@@ -431,30 +431,16 @@ function spawnDanmaku(el, isEvent) {
     var elWidth = el.offsetWidth;
     var containerWidth = window.innerWidth;
 
-    // === SIMPLE VISIBILITY TEST (remove after debug) ===
-    // Create a bright yellow div at top-center to test if rendering works at all
-    if (danmakuLayer.querySelectorAll('.danmaku-item').length <= 1) {
-        var testDiv = document.createElement('div');
-        testDiv.style.cssText = 'position:fixed;top:50px;left:50%;transform:translateX(-50%);' +
-            'background:red;color:#fff;font:bold 24px sans-serif;padding:10px 20px;z-index:99998;';
-        testDiv.textContent = 'TEST RENDERING [' + elWidth + 'px]';
-        document.body.appendChild(testDiv);
-        _sbDebug('TEST DIV added at top-center');
-        setTimeout(function() { testDiv.remove(); }, 8000);
-    }
-    // === END TEST ===
-
     el.style.top = (lane * CFG.danmakuDensity) + 'px';
-    el.style.willChange = 'left';
 
-    // Use JS-driven animation instead of CSS @keyframes
-    // CSS animations can behave inconsistently in OBS Chromium
+    // Use JS-driven animation — start VISIBLE on screen, not off-screen
     var startX, endX;
     if (isRight) {
         startX = -(elWidth + 20);
         endX = containerWidth + 20;
     } else {
-        startX = containerWidth + 20;
+        // Start at right edge of visible area (not off-screen!)
+        startX = containerWidth;
         endX = -(elWidth + 20);
     }
 
@@ -465,22 +451,15 @@ function spawnDanmaku(el, isEvent) {
     el.style.left = startX + 'px';
     el.style.visibility = '';
 
-    // Debug trace for first few
-    if (_sbEventCount <= 2) {
-        _sbDebug('SPAWN: w=' + elWidth + ' lane=' + lane + ' dur=' + baseDuration.toFixed(1) + 's vw=' + containerWidth + ' x=' + startX + '->' + endX);
-    }
+    // Debug trace — always show for now
+    _sbDebug('SPAWN: w=' + elWidth + ' lane=' + lane + ' dur=' + baseDuration.toFixed(1) + 's x=' + startX + '->' + endX);
 
     function animate(timestamp) {
         if (!startTime) startTime = timestamp;
         var elapsed = timestamp - startTime;
         var progress = Math.min(elapsed / durationMs, 1);
 
-        var currentX;
-        if (isRight) {
-            currentX = startX + (endX - startX) * progress;
-        } else {
-            currentX = startX + (endX - startX) * progress;
-        }
+        var currentX = startX + (endX - startX) * progress;
         el.style.left = currentX + 'px';
 
         if (progress < 1) {
