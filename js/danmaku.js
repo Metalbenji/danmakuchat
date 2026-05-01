@@ -397,10 +397,17 @@ function spawnDanmaku(el, isEvent) {
     danmakuLayer.appendChild(el);
 
     var elWidth = el.offsetWidth;
+    var containerWidth = window.innerWidth;
+    var childCount = danmakuLayer.children.length;
+
+    // Debug trace for first few
+    if (_sbEventCount <= 2) {
+        _sbDebug('SPAWN: w=' + elWidth + ' lane=' + lane + ' dur=' + baseDuration.toFixed(1) + 's vw=' + containerWidth + ' kids=' + childCount);
+    }
+
     el.style.top = (lane * CFG.danmakuDensity) + 'px';
     el.style.animationDuration = baseDuration + 's';
 
-    var containerWidth = window.innerWidth;
     if (isRight) {
         // Left to right: start off-screen left, scroll right
         el.style.left = '-' + (elWidth + 20) + 'px';
