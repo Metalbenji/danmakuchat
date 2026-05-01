@@ -129,19 +129,26 @@ if (showTwitch) {
 async function getTwitchBadges(badges) {
     if (!badges || !Array.isArray(badges)) return '';
     return badges.map(function(badge) {
-        var src = badge.imageUrl || badge.set_id ? 'https://badges.twitch.tv/v1/badges/' + badge.set_id + '/1' : '';
+        // Prefer Streamer.bot's provided imageUrl (most reliable)
+        var src = badge.imageUrl || '';
+        // Fallback to Twitch badge CDN if we have a set_id
+        if (!src && badge.set_id) {
+            src = 'https://badges.twitch.tv/v1/badges/' + badge.set_id + '/1';
+        }
         if (!src && badge.id) {
-            // Some Streamer.bot versions provide id + version instead of imageUrl
             src = 'https://badges.twitch.tv/v1/badges/' + badge.id + '/' + (badge.version || 1);
         }
         if (!src) return '';
-        return '<img src="' + src + '" class="badge" alt="' + escapeHTML(badge.title || badge.id || '') + '">';
+        return '<img src="' + src + '" class="badge" alt="" onerror="this.style.display=\'none\'">';
     }).join('');
 }
 
 async function getTwitchAvatar(login) {
     if (!login) return '';
     if (twitchAvatars.has(login)) return twitchAvatars.get(login);
+
+    // Use a reliable fallback avatar service (no API key needed)
+    var fallback = 'https://pravatar.cc/40?u=' + encodeURIComponent(login);
 
     try {
         var resp = await fetch('https://api.twitch.tv/helix/users?login=' + encodeURIComponent(login), {
@@ -158,10 +165,11 @@ async function getTwitchAvatar(login) {
             }
         }
     } catch (e) {
-        // Silent fail — avatars are optional
+        // fetch fails from file:// — that's fine, use fallback
     }
 
-    return 'https://api.adorable.io/avatars/40/' + encodeURIComponent(login) + '.png';
+    twitchAvatars.set(login, fallback);
+    return fallback;
 }
 
 async function getTwitchMessageFromParts(parts) {

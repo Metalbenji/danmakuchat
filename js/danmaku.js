@@ -304,7 +304,7 @@ function createDanmakuChat(platform, data) {
 
     // Avatar
     if (CFG.showAvatar && data.avatar) {
-        html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="">';
+        html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" onerror="this.style.display=\'none\'">';
     }
 
     // Username
