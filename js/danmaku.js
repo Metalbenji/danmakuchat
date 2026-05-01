@@ -251,7 +251,7 @@ function buildPlatformBadge(platform) {
     };
     var color = colors[platform] || '#888';
     if (style === 'logo') {
-        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;flex-shrink:0;"></span>';
+        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '"></span>';
     }
     if (style === 'pill') {
         return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;justify-content:center;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;"><span style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + color + ';display:block;"></span></span>';

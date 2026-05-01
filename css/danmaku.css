@@ -176,8 +176,8 @@ html, body {
 }
 
 .danmaku-item .danmaku-platform img {
-    width: var(--dm-icon-size, 20px);
-    height: var(--dm-icon-size, 20px);
+    width: var(--dm-icon-size, 20px) !important;
+    height: var(--dm-icon-size, 20px) !important;
     object-fit: contain;
 }
 
