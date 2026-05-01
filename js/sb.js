@@ -52,13 +52,15 @@ function _sbEmit(eventName, data) {
 
 var _sbDebugEl = null;
 var _sbDebugTimeout = null;
+var _sbDebugLog = [];
+var _sbMaxLogLines = 12;
 
 function _sbInitDebug() {
     var el = document.createElement('div');
     el.id = 'sb-debug';
-    el.style.cssText = 'position:fixed;top:4px;left:4px;z-index:99999;font:11px monospace;' +
-        'color:#0f0;background:#0008;padding:3px 6px;border-radius:3px;pointer-events:none;' +
-        'max-width:90vw;word-break:break-all;line-height:1.4;white-space:pre-wrap;';
+    el.style.cssText = 'position:fixed;top:4px;left:4px;z-index:99999;font:10px monospace;' +
+        'color:#0f0;background:rgba(0,0,0,0.75);padding:4px 6px;border-radius:3px;pointer-events:none;' +
+        'max-width:95vw;max-height:40vh;overflow:hidden;word-break:break-all;line-height:1.35;white-space:pre-wrap;';
     el.textContent = 'Connecting...';
     document.body.appendChild(el);
     _sbDebugEl = el;
@@ -66,8 +68,10 @@ function _sbInitDebug() {
 
 function _sbDebug(msg) {
     if (!_sbDebugEl) _sbInitDebug();
-    _sbDebugEl.textContent = msg;
-    // Auto-hide after 10s of no updates (only when connected)
+    _sbDebugLog.push(msg);
+    if (_sbDebugLog.length > _sbMaxLogLines) _sbDebugLog.shift();
+    _sbDebugEl.textContent = _sbDebugLog.join('\n');
+    // Auto-hide after 15s of no updates (only when connected)
     if (_sbDebugTimeout) clearTimeout(_sbDebugTimeout);
     _sbDebugTimeout = setTimeout(function() {
         if (_sbDebugEl && _sbConnected && _sbHelloReceived) {
@@ -75,7 +79,7 @@ function _sbDebug(msg) {
             _sbDebugEl.style.opacity = '0';
             setTimeout(function() { if (_sbDebugEl) _sbDebugEl.remove(); _sbDebugEl = null; }, 1000);
         }
-    }, 10000);
+    }, 15000);
 }
 
 // ─── Raw WebSocket Connection ─────────────────
@@ -116,7 +120,13 @@ function _sbConnect() {
         try {
             if (!event.data || typeof event.data !== 'string') return;
             var msg = JSON.parse(event.data);
-            console.log('[DanmakuChat] Received:', msg.request || (msg.event ? msg.event.source + '.' + msg.event.type : 'unknown'));
+
+            // Log every raw message to debug overlay (truncate long ones)
+            var rawStr = JSON.stringify(msg);
+            if (rawStr.length > 120) rawStr = rawStr.substring(0, 120) + '...';
+            var msgType = msg.request || (msg.event ? msg.event.source + '.' + msg.event.type : '?');
+            _sbDebug('<< ' + msgType + ': ' + rawStr);
+            console.log('[DanmakuChat] Received:', msgType, msg);
 
             // ── Step 1: Handle Hello message ──
             // Server sends this first after connection opens.
