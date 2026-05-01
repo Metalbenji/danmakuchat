@@ -55,13 +55,11 @@ html, body {
     gap: var(--dm-gap, 6px);
     padding: var(--dm-padding-y, 4px) var(--dm-padding-x, 12px);
     border-radius: var(--dm-radius, 6px);
-    will-change: transform;
-    animation-name: danmaku-scroll;
-    animation-timing-function: linear;
-    animation-fill-mode: forwards;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     opacity: var(--dm-opacity, 1);
+    /* Animation is driven by JS (requestAnimationFrame) — not CSS @keyframes */
+    animation: none;
 }
 
 /* ============================================ */

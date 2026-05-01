@@ -384,7 +384,6 @@ function spawnDanmaku(el, isEvent) {
     var isRight = CFG.direction === 'right';
 
     // Depth effect: random zoom/opacity for chat messages on middle layer
-    // Use 'zoom' instead of transform:scale() to avoid conflicting with scroll animation transform
     if (CFG.depthEffect && !isEvent && CFG.LAYER === 'middle') {
         var depthScale = CFG.depthMinScale + Math.random() * (CFG.depthMaxScale - CFG.depthMinScale);
         var depthOpacity = CFG.depthMinOpacity + Math.random() * (CFG.depthMaxOpacity - CFG.depthMinOpacity);
@@ -394,38 +393,60 @@ function spawnDanmaku(el, isEvent) {
 
     // Append to DOM first so offsetWidth is accurate
     el.style.visibility = 'hidden';
+    el.style.animationName = 'none'; // disable CSS animation
+    el.style.animationDuration = '';
     danmakuLayer.appendChild(el);
 
     var elWidth = el.offsetWidth;
     var containerWidth = window.innerWidth;
-    var childCount = danmakuLayer.children.length;
+
+    el.style.top = (lane * CFG.danmakuDensity) + 'px';
+    el.style.willChange = 'left';
+
+    // Use JS-driven animation instead of CSS @keyframes
+    // CSS animations can behave inconsistently in OBS Chromium
+    var startX, endX;
+    if (isRight) {
+        startX = -(elWidth + 20);
+        endX = containerWidth + 20;
+    } else {
+        startX = containerWidth + 20;
+        endX = -(elWidth + 20);
+    }
+
+    var totalDistance = Math.abs(endX - startX);
+    var durationMs = baseDuration * 1000;
+    var startTime = null;
+
+    el.style.left = startX + 'px';
+    el.style.visibility = '';
 
     // Debug trace for first few
     if (_sbEventCount <= 2) {
-        _sbDebug('SPAWN: w=' + elWidth + ' lane=' + lane + ' dur=' + baseDuration.toFixed(1) + 's vw=' + containerWidth + ' kids=' + childCount);
+        _sbDebug('SPAWN: w=' + elWidth + ' lane=' + lane + ' dur=' + baseDuration.toFixed(1) + 's vw=' + containerWidth + ' x=' + startX + '->' + endX);
     }
 
-    el.style.top = (lane * CFG.danmakuDensity) + 'px';
-    el.style.animationDuration = baseDuration + 's';
+    function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var elapsed = timestamp - startTime;
+        var progress = Math.min(elapsed / durationMs, 1);
 
-    if (isRight) {
-        // Left to right: start off-screen left, scroll right
-        el.style.left = '-' + (elWidth + 20) + 'px';
-        el.style.right = '';
-        el.style.animationName = 'danmaku-scroll-right';
-    } else {
-        // Right to left (default): start off-screen right, scroll left
-        el.style.left = (containerWidth + 20) + 'px';
-        el.style.right = '';
-        el.style.animationName = 'danmaku-scroll';
+        var currentX;
+        if (isRight) {
+            currentX = startX + (endX - startX) * progress;
+        } else {
+            currentX = startX + (endX - startX) * progress;
+        }
+        el.style.left = currentX + 'px';
+
+        if (progress < 1) {
+            el._danmakuRAF = requestAnimationFrame(animate);
+        } else {
+            el.remove();
+        }
     }
 
-    el.style.visibility = '';
-
-    // Remove after animation completes
-    el.addEventListener('animationend', function() {
-        el.remove();
-    });
+    el._danmakuRAF = requestAnimationFrame(animate);
 }
 
 function cullOldDanmaku() {
