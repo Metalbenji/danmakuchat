@@ -400,6 +400,19 @@ function spawnDanmaku(el, isEvent) {
     var elWidth = el.offsetWidth;
     var containerWidth = window.innerWidth;
 
+    // === SIMPLE VISIBILITY TEST (remove after debug) ===
+    // Create a bright yellow div at top-center to test if rendering works at all
+    if (danmakuLayer.querySelectorAll('.danmaku-item').length <= 1) {
+        var testDiv = document.createElement('div');
+        testDiv.style.cssText = 'position:fixed;top:50px;left:50%;transform:translateX(-50%);' +
+            'background:red;color:#fff;font:bold 24px sans-serif;padding:10px 20px;z-index:99998;';
+        testDiv.textContent = 'TEST RENDERING [' + elWidth + 'px]';
+        document.body.appendChild(testDiv);
+        _sbDebug('TEST DIV added at top-center');
+        setTimeout(function() { testDiv.remove(); }, 8000);
+    }
+    // === END TEST ===
+
     el.style.top = (lane * CFG.danmakuDensity) + 'px';
     el.style.willChange = 'left';
 
