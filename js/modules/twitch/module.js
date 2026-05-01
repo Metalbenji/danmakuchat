@@ -194,6 +194,14 @@ async function getTwitchMessageFromParts(parts) {
     }).join('');
 }
 
+// ---- Helper: enrich event data with avatar + badges ----
+async function _enrichEvent(data, user) {
+    var login = user ? user.login : '';
+    var avatar = await getTwitchAvatar(login, user ? user.color : '', user ? user.profileImageUrl : '');
+    var badges = user ? await getTwitchBadges(user.badges) : '';
+    return { avatar: avatar, badges: badges };
+}
+
 // ---- Twitch Event Functions ----
 
 async function twitchChatMessage(data) {
@@ -230,10 +238,17 @@ async function twitchChatMessage(data) {
 async function twitchFollowMessage(data) {
     if (showTwitchFollows === false) return;
 
+    var user = _twitchUser(data);
+    var displayName = user ? (user.displayName || user.name) : (data.user_name || 'Unknown');
+    var userColor = user ? user.color : '#ff6b6b';
+    var extra = await _enrichEvent(data, user);
+
     createDanmakuEvent('twitch', {
-        username: data.user_name || data.username || '',
-        color: '#ff6b6b',
-        action: 'just followed!'
+        username: displayName,
+        color: userColor,
+        action: 'just followed!',
+        avatar: extra.avatar,
+        badges: extra.badges
     });
 }
 
@@ -243,14 +258,15 @@ async function twitchAnnouncementMessage(data) {
     var user = _twitchUser(data);
     var displayName = user ? (user.displayName || user.name) : (data.user_name || 'Unknown');
     var userColor = user ? user.color : '#fff';
-    var badgeList = user ? await getTwitchBadges(user.badges) : '';
+    var extra = await _enrichEvent(data, user);
     var messageFromParts = await getTwitchMessageFromParts(data.parts);
 
     createDanmakuEvent('twitch', {
         username: displayName,
         color: userColor,
         action: 'announced:',
-        badges: badgeList,
+        avatar: extra.avatar,
+        badges: extra.badges,
         messageHtml: safeSanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] })
     });
 }
@@ -262,6 +278,7 @@ async function twitchBitsMessage(data) {
     var displayName = user ? (user.displayName || user.name) : (data.user_name || 'Unknown');
     var bits = data.bits || 0;
     var bitWord = bits > 1 ? 'bits' : 'bit';
+    var extra = await _enrichEvent(data, user);
     var messageFromParts = await getTwitchMessageFromParts(data.parts);
 
     createDanmakuEvent('twitch', {
@@ -269,6 +286,8 @@ async function twitchBitsMessage(data) {
         color: '#00e5ff',
         action: 'cheered',
         value: bits + ' ' + bitWord,
+        avatar: extra.avatar,
+        badges: extra.badges,
         messageHtml: safeSanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] })
     });
 }
@@ -276,11 +295,17 @@ async function twitchBitsMessage(data) {
 async function twitchRewardRedemption(data) {
     if (showTwitchRewardRedemptions === false) return;
 
+    var user = _twitchUser(data);
+    var displayName = user ? (user.displayName || user.name) : (data.user_name || '');
+    var extra = await _enrichEvent(data, user);
+
     createDanmakuEvent('twitch', {
-        username: data.user_name || data.username || '',
+        username: displayName,
         color: '#9147ff',
         action: 'redeemed',
         value: data.reward ? data.reward.title : '',
+        avatar: extra.avatar,
+        badges: extra.badges,
         messageHtml: escapeHTML(data.user_input || '')
     });
 }
@@ -295,12 +320,15 @@ async function twitchSubMessage(data) {
     var tier = data.sub_tier || data.subTier || 1000;
     var monthsStr = formatSubMonthDuration(months);
     var tierStr = isPrime ? 'Prime' : 'Tier ' + Math.floor(tier / 1000);
+    var extra = await _enrichEvent(data, user);
 
     createDanmakuEvent('twitch', {
         username: displayName,
         color: '#9147ff',
         action: 'subscribed!',
-        value: monthsStr + ' (' + tierStr + ')'
+        value: monthsStr + ' (' + tierStr + ')',
+        avatar: extra.avatar,
+        badges: extra.badges
     });
 }
 
@@ -314,6 +342,7 @@ async function twitchReSubMessage(data) {
     var tier = data.subTier || data.sub_tier || 1000;
     var monthsStr = formatSubMonthDuration(months);
     var tierStr = isPrime ? 'Prime' : 'Tier ' + Math.floor(tier / 1000);
+    var extra = await _enrichEvent(data, user);
     var messageFromParts = await getTwitchMessageFromParts(data.parts);
 
     createDanmakuEvent('twitch', {
@@ -321,6 +350,8 @@ async function twitchReSubMessage(data) {
         color: '#9147ff',
         action: 'resubscribed!',
         value: monthsStr + ' (' + tierStr + ')',
+        avatar: extra.avatar,
+        badges: extra.badges,
         messageHtml: safeSanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] })
     });
 }
@@ -333,12 +364,15 @@ async function twitchGiftMessage(data) {
     var months = data.durationMonths || data.duration_months || 1;
     var recipientName = data.recipient ? (data.recipient.displayName || data.recipient.name || data.recipient.username) : 'someone';
     var monthsStr = formatSubMonthDuration(months);
+    var extra = await _enrichEvent(data, user);
 
     createDanmakuEvent('twitch', {
         username: displayName,
         color: '#9147ff',
         action: 'gifted a ' + monthsStr + ' sub to',
-        value: recipientName
+        value: recipientName,
+        avatar: extra.avatar,
+        badges: extra.badges
     });
 }
 
@@ -349,12 +383,15 @@ async function twitchGiftBombMessage(data) {
     var displayName = user ? (user.displayName || user.name) : (data.user_name || 'Unknown');
     var total = data.total || 1;
     var subWord = total > 1 ? 'subs' : 'sub';
+    var extra = await _enrichEvent(data, user);
 
     createDanmakuEvent('twitch', {
         username: displayName,
         color: '#9147ff',
         action: 'is gifting',
-        value: total + ' ' + subWord + '!'
+        value: total + ' ' + subWord + '!',
+        avatar: extra.avatar,
+        badges: extra.badges
     });
 }
 
@@ -363,12 +400,16 @@ async function twitchRaidMessage(data) {
 
     var viewers = data.viewers || 1;
     var viewerWord = viewers > 1 ? 'viewers' : 'viewer';
-    var raider = data.from_broadcaster_user_name || data.user_name || 'Unknown';
+    var user = _twitchUser(data);
+    var raider = user ? (user.displayName || user.name) : (data.from_broadcaster_user_name || 'Unknown');
+    var extra = await _enrichEvent(data, user);
 
     createDanmakuEvent('twitch', {
         username: raider,
         color: '#ff6b35',
         action: 'raided with',
-        value: viewers + ' ' + viewerWord
+        value: viewers + ' ' + viewerWord,
+        avatar: extra.avatar,
+        badges: extra.badges
     });
 }

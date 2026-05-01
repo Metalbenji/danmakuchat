@@ -360,6 +360,20 @@ function createDanmakuEvent(platform, data) {
     // Platform badge
     html += buildPlatformBadge(platform);
 
+    // Badges
+    if (CFG.showBadges && data.badges) {
+        html += '<span class="danmaku-badges">' + data.badges + '</span>';
+    }
+
+    // Avatar — can be a URL string or inline HTML (e.g. CSS initial circle)
+    if (CFG.showAvatar && data.avatar) {
+        if (data.avatar.charAt(0) === '<') {
+            html += data.avatar;
+        } else {
+            html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" style="width:' + effectiveIconSize + 'px;height:' + effectiveIconSize + 'px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0;" onerror="this.style.display=\'none\'">';
+        }
+    }
+
     // Username
     var userColor = data.color || '#fff';
     html += '<span class="danmaku-username" style="color:' + userColor + '">' + escapeHTML(data.username || '') + '</span>';
