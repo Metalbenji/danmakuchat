@@ -174,10 +174,12 @@ function getAvailableLane(duration) {
     if (totalLanes < 1) totalLanes = 1;
     var now = Date.now();
 
-    // Try the next lane
+    // Shuffle start position so messages don't always go top→bottom
+    var startOffset = Math.floor(Math.random() * totalLanes);
+
+    // Try lanes in randomised order
     for (var attempts = 0; attempts < totalLanes; attempts++) {
-        var lane = currentLane % totalLanes;
-        currentLane++;
+        var lane = (startOffset + attempts) % totalLanes;
 
         var laneData = lanes.get(lane);
         if (!laneData || laneData.endTime <= now) {
@@ -195,7 +197,6 @@ function getAvailableLane(duration) {
             soonestLane = entry[0];
         }
     }
-    currentLane = (soonestLane + 1) % totalLanes;
     lanes.set(soonestLane, { endTime: now + (duration * 0.3) * 1000 });
     return soonestLane;
 }
