@@ -200,16 +200,15 @@ function getAvailableLane(duration) {
 
 // ---- Layer Routing ----
 function shouldShowMessage(type) {
+    // Events only show on front layer
     if (type === 'event') {
         return CFG.LAYER === 'front';
     }
-    if (CFG.LAYER === 'front') {
-        return Math.random() < CFG.frontChance;
-    }
-    if (CFG.LAYER === 'back') {
-        return Math.random() < CFG.backChance;
-    }
-    return Math.random() >= CFG.frontChance;
+    // Chat messages: always show on whatever layer is loaded.
+    // When multiple layers are active (front/middle/back browser sources),
+    // the random routing splits them — but each source needs to show its share.
+    // Since each browser source loads a SINGLE layer, pass everything through.
+    return true;
 }
 
 // ---- Platform badge HTML ----
@@ -254,10 +253,7 @@ function buildPlatformBadge(platform) {
 // ---- Danmaku Creation ----
 
 function createDanmakuChat(platform, data) {
-    if (!shouldShowMessage('chat')) {
-        _sbDebug('DANMAKU: blocked by shouldShowMessage');
-        return;
-    }
+    if (!shouldShowMessage('chat')) return;
 
     // Filtering
     if (CFG.ignoreCommands && data.text && data.text.startsWith('!')) return;
