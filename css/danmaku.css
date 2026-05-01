@@ -217,6 +217,16 @@ html, body {
     border: 1.5px solid rgba(255, 255, 255, 0.3);
 }
 
+/* Inline avatar (CSS initial circle — used when API unavailable) */
+.danmaku-item .danmaku-avatar-inline {
+    flex-shrink: 0;
+    width: var(--dm-icon-size, 20px);
+    height: var(--dm-icon-size, 20px);
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+}
+
 /* ---- Username ---- */
 .danmaku-item .danmaku-username {
     font-weight: 700;

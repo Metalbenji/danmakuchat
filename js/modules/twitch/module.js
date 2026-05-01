@@ -143,12 +143,10 @@ async function getTwitchBadges(badges) {
     }).join('');
 }
 
-async function getTwitchAvatar(login) {
+async function getTwitchAvatar(login, color) {
     if (!login) return '';
+    // Try Twitch API first (works when served over http, not file://)
     if (twitchAvatars.has(login)) return twitchAvatars.get(login);
-
-    // Use a reliable fallback avatar service (no API key needed)
-    var fallback = 'https://pravatar.cc/40?u=' + encodeURIComponent(login);
 
     try {
         var resp = await fetch('https://api.twitch.tv/helix/users?login=' + encodeURIComponent(login), {
@@ -165,11 +163,17 @@ async function getTwitchAvatar(login) {
             }
         }
     } catch (e) {
-        // fetch fails from file:// — that's fine, use fallback
+        // fetch fails from file:// — generate inline avatar
     }
 
-    twitchAvatars.set(login, fallback);
-    return fallback;
+    // Generate a CSS avatar circle with the user's initial (always works, no network)
+    var initial = login.charAt(0).toUpperCase();
+    var bgColor = color || '#6441a5'; // Twitch purple default
+    var avatarHtml = '<span class="danmaku-avatar-inline" style="background:' + bgColor +
+        ';color:#fff;font-weight:700;font-size:' + Math.max(10, 14) + 'px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;">' +
+        escapeHTML(initial) + '</span>';
+    twitchAvatars.set(login, avatarHtml);
+    return avatarHtml;
 }
 
 async function getTwitchMessageFromParts(parts) {
@@ -207,7 +211,7 @@ async function twitchChatMessage(data) {
     if (text.startsWith('!') && ignoreCommands === true) return;
 
     try {
-        var avatarImage = await getTwitchAvatar(userLogin);
+        var avatarImage = await getTwitchAvatar(userLogin, user.color);
         var badgeList = await getTwitchBadges(user.badges);
         var messageFromParts = await getTwitchMessageFromParts(data.parts);
 

@@ -297,9 +297,15 @@ function createDanmakuChat(platform, data) {
         html += '<span class="danmaku-badges">' + data.badges + '</span>';
     }
 
-    // Avatar
+    // Avatar — can be a URL string or inline HTML (e.g. CSS initial circle)
     if (CFG.showAvatar && data.avatar) {
-        html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" onerror="this.style.display=\'none\'">';
+        if (data.avatar.charAt(0) === '<') {
+            // Inline HTML avatar (generated initial circle)
+            html += data.avatar;
+        } else {
+            // URL — use img tag
+            html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" onerror="this.style.display=\'none\'">';
+        }
     }
 
     // Username
