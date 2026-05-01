@@ -50,48 +50,18 @@ function _sbEmit(eventName, data) {
             if (result && typeof result.catch === 'function') {
                 result.catch(function(err) {
                     console.error('[DanmakuChat] Async handler error for ' + eventName + ':', err);
-                    _sbDebug('ASYNC ERROR: ' + eventName + ': ' + (err.message || err));
                 });
             }
         } catch(err) {
             console.error('[DanmakuChat] Handler error for ' + eventName + ':', err);
-            _sbDebug('HANDLER ERROR: ' + eventName + ': ' + err.message);
         }
     });
 }
 
-// ─── On-screen debug (visible in OBS) ─────────
-
-var _sbDebugEl = null;
-var _sbDebugTimeout = null;
-var _sbDebugLog = [];
-var _sbMaxLogLines = 3;
-
-function _sbInitDebug() {
-    var el = document.createElement('div');
-    el.id = 'sb-debug';
-    el.style.cssText = 'position:fixed;top:4px;left:4px;z-index:99999;font:10px monospace;' +
-        'color:#0f0;background:rgba(0,0,0,0.75);padding:4px 6px;border-radius:3px;pointer-events:none;' +
-        'max-width:95vw;max-height:40vh;overflow:hidden;word-break:break-all;line-height:1.35;white-space:pre-wrap;';
-    el.textContent = 'Connecting...';
-    document.body.appendChild(el);
-    _sbDebugEl = el;
-}
+// ─── Debug (console only — no on-screen overlay in OBS) ─────────
 
 function _sbDebug(msg) {
-    if (!_sbDebugEl) _sbInitDebug();
-    _sbDebugLog.push(msg);
-    if (_sbDebugLog.length > _sbMaxLogLines) _sbDebugLog.shift();
-    _sbDebugEl.textContent = _sbDebugLog.join('\n');
-    // Auto-hide after 4s of no updates (only when connected)
-    if (_sbDebugTimeout) clearTimeout(_sbDebugTimeout);
-    _sbDebugTimeout = setTimeout(function() {
-        if (_sbDebugEl && _sbConnected && _sbHelloReceived) {
-            _sbDebugEl.style.transition = 'opacity 1s';
-            _sbDebugEl.style.opacity = '0';
-            setTimeout(function() { if (_sbDebugEl) _sbDebugEl.remove(); _sbDebugEl = null; }, 1000);
-        }
-    }, 4000);
+    console.log('[DanmakuChat]', msg);
 }
 
 // ─── Raw WebSocket Connection ─────────────────
@@ -109,20 +79,19 @@ var _sbMaxReconnectDelay = 30000;
 
 function _sbConnect() {
     var url = 'ws://' + streamerBotServerAddress + ':' + streamerBotServerPort + '/';
-    _sbDebug('Connecting...');
+    console.log('[DanmakuChat] Connecting to', url);
     _sbHelloReceived = false;
 
     try {
         _sbWebSocket = new WebSocket(url);
     } catch(err) {
-        _sbDebug('WebSocket ERROR: ' + err.message);
+        console.error('[DanmakuChat] WebSocket ERROR:', err.message);
         _sbScheduleReconnect();
         return;
     }
 
     _sbWebSocket.onopen = function() {
-        _sbDebug('Waiting for Hello...');
-        // Do NOT subscribe yet — wait for the Hello message from the server
+        console.log('[DanmakuChat] Connected, waiting for Hello...');
     };
 
     _sbWebSocket.onmessage = function(event) {
@@ -140,7 +109,7 @@ function _sbConnect() {
                 _sbConnected = true;
                 _sbReconnectDelay = 2000;
                 var name = msg.info ? (msg.info.name + ' v' + msg.info.version) : 'Streamer.bot';
-                _sbDebug('Hello from ' + name);
+                console.log('[DanmakuChat] Hello from', name);
 
                 // Wait a moment then subscribe (same as Streamgoals does)
                 setTimeout(function() {
@@ -156,9 +125,9 @@ function _sbConnect() {
                     if (msg.events) {
                         for (var k in msg.events) count += msg.events[k].length;
                     }
-                    _sbDebug('Subscribed!');
+                    console.log('[DanmakuChat] Subscribed!');
                 } else if (msg.error) {
-                    _sbDebug('Subscribe ERROR: ' + msg.error);
+                    console.error('[DanmakuChat] Subscribe ERROR:', msg.error);
                 }
                 return;
             }
@@ -192,14 +161,7 @@ function _sbConnect() {
 
                 _sbEmit(handlerKey, response);
 
-                // Show first event in debug overlay
-                if (_sbEventCount <= 1) {
-                    var firstText = eventData.text || '(no text)';
-                    var firstUser = eventData.message ? eventData.message.username : (eventData.user_name || '?');
-                    _sbDebug('Event #' + _sbEventCount + ': ' + handlerKey + ' [' + firstUser + ']: ' + firstText);
-                } else if (_sbEventCount === 2) {
-                    _sbDebug('Connected — ' + _sbEventCount + ' events received');
-                }
+
             }
         } catch(err) {
             // Not JSON or parse error, ignore
@@ -211,12 +173,12 @@ function _sbConnect() {
         _sbConnected = false;
         _sbHelloReceived = false;
         _sbWebSocket = null;
-        _sbDebug('Disconnected (code ' + event.code + ') — retrying...');
+        console.log('[DanmakuChat] Disconnected (code ' + event.code + ') — retrying...');
         _sbScheduleReconnect();
     };
 
     _sbWebSocket.onerror = function(err) {
-        _sbDebug('WebSocket error');
+        console.warn('[DanmakuChat] WebSocket error');
         // onclose fires after onerror
     };
 }
@@ -248,7 +210,7 @@ function _sbSubscribe() {
 
     if (Object.keys(events).length === 0) {
         // No handlers registered yet — retry shortly
-        _sbDebug('No handlers yet, retrying...');
+        console.log('[DanmakuChat] No handlers yet, retrying...');
         setTimeout(_sbSubscribe, 300);
         return;
     }
@@ -261,9 +223,9 @@ function _sbSubscribe() {
 
     try {
         _sbWebSocket.send(JSON.stringify(subscribeMsg));
-        _sbDebug('Subscribing...');
+        console.log('[DanmakuChat] Subscribing to', count, 'events');
     } catch(err) {
-        _sbDebug('Subscribe failed: ' + err.message);
+        console.error('[DanmakuChat] Subscribe failed:', err.message);
     }
 }
 
@@ -356,6 +318,6 @@ setTimeout(function() {
     try {
         _sbConnect();
     } catch(err) {
-        _sbDebug('Init failed: ' + err.message);
+        console.error('[DanmakuChat] Init failed:', err.message);
     }
 }, 0);

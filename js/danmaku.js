@@ -48,7 +48,7 @@ const CFG = {
     // Depth & Layers
     frontChance: Number(getURLParam("frontChance", 0.05)),
     backChance: Number(getURLParam("backChance", 0.4)),
-    depthEffect: getURLParam("depthEffect", true),
+    depthEffect: getURLParam("depthEffect", false),
     depthMinScale: Number(getURLParam("depthMinScale", 0.45)),
     depthMaxScale: Number(getURLParam("depthMaxScale", 1.3)),
     depthMinOpacity: Number(getURLParam("depthMinOpacity", 0.3)),
@@ -386,10 +386,11 @@ function spawnDanmaku(el, isEvent) {
     var isRight = CFG.direction === 'right';
 
     // Depth effect: random zoom/opacity for chat messages on middle layer
+    // Only applies when depthEffect is enabled AND using multiple layers
     if (CFG.depthEffect && !isEvent && CFG.LAYER === 'middle') {
-        var depthScale = CFG.depthMinScale + Math.random() * (CFG.depthMaxScale - CFG.depthMinScale);
-        var depthOpacity = CFG.depthMinOpacity + Math.random() * (CFG.depthMaxOpacity - CFG.depthMinOpacity);
-        el.style.zoom = depthScale.toFixed(3);
+        var depthScale = 0.85 + Math.random() * 0.3; // 0.85–1.15 (subtle range)
+        var depthOpacity = 0.7 + Math.random() * 0.3;  // 0.7–1.0
+        el.style.transform = 'scale(' + depthScale.toFixed(3) + ')';
         el.style.opacity = depthOpacity.toFixed(3);
     }
 
@@ -404,33 +405,35 @@ function spawnDanmaku(el, isEvent) {
 
     el.style.top = (lane * CFG.danmakuDensity) + 'px';
 
-    // Use JS-driven animation — start VISIBLE on screen, not off-screen
-    var startX, endX;
-    if (isRight) {
-        startX = -(elWidth + 20);
-        endX = containerWidth + 20;
-    } else {
-        // Start at right edge of visible area (not off-screen!)
-        startX = containerWidth;
-        endX = -(elWidth + 20);
-    }
-
-    var totalDistance = Math.abs(endX - startX);
-    var durationMs = baseDuration * 1000;
-    var startTime = null;
-
-    el.style.left = startX + 'px';
+    // Position element at the top of its lane, left edge of container
+    el.style.left = '0px';
     el.style.visibility = '';
 
+    // GPU-accelerated animation using transform: translateX()
+    // Start off-screen right, scroll to off-screen left
+    var startTranslateX, endTranslateX;
+    if (isRight) {
+        startTranslateX = -(elWidth + 20 + containerWidth);
+        endTranslateX = 20;
+    } else {
+        startTranslateX = containerWidth;
+        endTranslateX = -(elWidth + 20);
+    }
 
+    var durationMs = baseDuration * 1000;
+    var startTime = null;
+    // Store base scale if depth effect was applied
+    var baseTransform = el.style.transform || '';
 
     function animate(timestamp) {
         if (!startTime) startTime = timestamp;
         var elapsed = timestamp - startTime;
         var progress = Math.min(elapsed / durationMs, 1);
 
-        var currentX = startX + (endX - startX) * progress;
-        el.style.left = currentX + 'px';
+        // Use ease-out for natural deceleration feel
+        var eased = 1 - Math.pow(1 - progress, 1.5);
+        var currentX = startTranslateX + (endTranslateX - startTranslateX) * eased;
+        el.style.transform = baseTransform + ' translateX(' + currentX.toFixed(1) + 'px)';
 
         if (progress < 1) {
             el._danmakuRAF = requestAnimationFrame(animate);

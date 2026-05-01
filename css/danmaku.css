@@ -58,7 +58,8 @@ html, body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     opacity: var(--dm-opacity, 1);
-    /* Animation is driven by JS (requestAnimationFrame) — not CSS @keyframes */
+    will-change: transform;
+    /* Animation is driven by JS (requestAnimationFrame) via transform: translateX() */
     animation: none;
 }
 
