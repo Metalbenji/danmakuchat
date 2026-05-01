@@ -396,53 +396,35 @@ function spawnDanmaku(el, isEvent) {
 
     // Append to DOM first so offsetWidth is accurate
     el.style.visibility = 'hidden';
-    el.style.animationName = 'none'; // disable CSS animation
-    el.style.animationDuration = '';
     danmakuLayer.appendChild(el);
 
     var elWidth = el.offsetWidth;
     var containerWidth = window.innerWidth;
 
+    // Position element at the starting edge
     el.style.top = (lane * CFG.danmakuDensity) + 'px';
 
-    // Position element at the top of its lane, left edge of container
-    el.style.left = '0px';
+    // Use native CSS @keyframes animation (GPU-composited, buttery smooth)
+    if (isRight) {
+        // Left to Right: start off-screen left
+        el.style.left = -(elWidth + 20) + 'px';
+        el.style.animation = 'danmaku-scroll-right ' + baseDuration.toFixed(2) + 's linear forwards';
+    } else {
+        // Right to Left (default): start at right edge
+        el.style.left = containerWidth + 'px';
+        el.style.animation = 'danmaku-scroll ' + baseDuration.toFixed(2) + 's linear forwards';
+    }
+
     el.style.visibility = '';
 
-    // GPU-accelerated animation using transform: translateX()
-    // Start off-screen right, scroll to off-screen left
-    var startTranslateX, endTranslateX;
-    if (isRight) {
-        startTranslateX = -(elWidth + 20 + containerWidth);
-        endTranslateX = 20;
-    } else {
-        startTranslateX = containerWidth;
-        endTranslateX = -(elWidth + 20);
-    }
-
-    var durationMs = baseDuration * 1000;
-    var startTime = null;
-    // Store base scale if depth effect was applied
-    var baseTransform = el.style.transform || '';
-
-    function animate(timestamp) {
-        if (!startTime) startTime = timestamp;
-        var elapsed = timestamp - startTime;
-        var progress = Math.min(elapsed / durationMs, 1);
-
-        // Use ease-out for natural deceleration feel
-        var eased = 1 - Math.pow(1 - progress, 1.5);
-        var currentX = startTranslateX + (endTranslateX - startTranslateX) * eased;
-        el.style.transform = baseTransform + ' translateX(' + currentX.toFixed(1) + 'px)';
-
-        if (progress < 1) {
-            el._danmakuRAF = requestAnimationFrame(animate);
-        } else {
-            el.remove();
-        }
-    }
-
-    el._danmakuRAF = requestAnimationFrame(animate);
+    // Clean up element when animation finishes
+    el.addEventListener('animationend', function() {
+        el.remove();
+    });
+    // Safety net: if animationend doesn't fire (OBS edge case), remove after duration + 2s
+    setTimeout(function() {
+        if (el.parentNode) el.remove();
+    }, (baseDuration + 2) * 1000);
 }
 
 function cullOldDanmaku() {
