@@ -103,6 +103,37 @@ root.setProperty('--dm-event-pad-y', CFG.eventPaddingY + 'px');
 const danmakuLayer = document.getElementById('danmaku-layer');
 danmakuLayer.classList.add('layer-' + CFG.LAYER);
 
+// === IMMEDIATE VISIBILITY TEST (fires on page load, no events needed) ===
+(function() {
+    // Test 1: bright div directly on body
+    var t1 = document.createElement('div');
+    t1.textContent = 'PAGE LOADED — layer=' + CFG.LAYER + ' size=' + window.innerWidth + 'x' + window.innerHeight;
+    t1.style.cssText = 'position:fixed;top:0;left:0;right:0;background:blue;color:#fff;font:bold 16px sans-serif;padding:6px 10px;z-index:999999;text-align:center;';
+    document.body.appendChild(t1);
+
+    // Test 2: a danmaku-style div inside danmakuLayer
+    var t2 = document.createElement('div');
+    t2.textContent = 'DANMAKU LAYER TEST';
+    t2.style.cssText = 'position:absolute;top:30px;left:10px;background:lime;color:#000;font:bold 20px sans-serif;padding:8px 16px;border-radius:6px;';
+    danmakuLayer.appendChild(t2);
+
+    // Test 3: a div with the actual danmaku class
+    var t3 = document.createElement('div');
+    t3.className = 'danmaku-item chat twitch';
+    t3.innerHTML = '<span class="danmaku-username" style="color:#9147ff">TestUser</span><span class="danmaku-separator">:</span><span class="danmaku-message">Hello World!</span>';
+    t3.style.top = '60px';
+    t3.style.left = '10px';
+    t3.style.animation = 'none';
+    t3.style.visibility = 'visible';
+    danmakuLayer.appendChild(t3);
+
+    // Auto-cleanup after 15s
+    setTimeout(function() {
+        t1.remove(); t2.remove(); t3.remove();
+    }, 15000);
+})();
+// === END TEST ===
+
 if (CFG.LAYER === 'back') {
     danmakuLayer.style.filter = 'blur(' + CFG.backLayerBlur + 'px)';
     danmakuLayer.style.opacity = CFG.backLayerOpacity;
