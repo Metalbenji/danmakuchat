@@ -44,7 +44,10 @@ function _sbEmit(eventName, data) {
     var handlers = _sbHandlers[eventName];
     if (!handlers || handlers.length === 0) return;
     handlers.forEach(function(h) {
-        try { h(data); } catch(err) { console.warn('[DanmakuChat] Handler error for ' + eventName + ':', err); }
+        try { h(data); } catch(err) {
+            console.error('[DanmakuChat] Handler error for ' + eventName + ':', err);
+            _sbDebug('HANDLER ERROR: ' + eventName + ': ' + err.message);
+        }
     });
 }
 
@@ -169,17 +172,23 @@ function _sbConnect() {
             }
 
             // ── Step 4: Handle actual events ──
-            // Format: { "timeStamp": "...", "event": { "source": "Twitch", "type": "ChatMessage" }, "data": {...} }
+            // Format varies by Streamer.bot version:
+            //   v1: { "timeStamp": "...", "event": { "source": "Twitch", "type": "ChatMessage" }, "data": {...} }
+            //   v2: { "timestamp": "...", "event": { "source": "Twitch", "type": "ChatMessage", "data": {...} } }
+            // Handle both by checking msg.data first, then msg.event.data
             if (msg.event && msg.event.source && msg.event.type) {
                 _sbEventCount++;
                 var sourceType = msg.event.source;  // STRING: "Twitch", "YouTube", etc.
                 var eventType = msg.event.type;      // STRING: "ChatMessage", "Follow", etc.
                 var handlerKey = sourceType + '.' + eventType;
 
+                // Get event payload — try both formats
+                var eventData = msg.data || msg.event.data || {};
+
                 // Build response object matching what @streamerbot/client provided
                 // The handlers expect response.data to be the event payload
                 var response = {
-                    data: msg.data,           // Event payload is at top-level msg.data
+                    data: eventData,
                     event: handlerKey,
                     source: sourceType
                 };
