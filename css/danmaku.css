@@ -176,8 +176,8 @@ html, body {
 }
 
 .danmaku-item .danmaku-platform img {
-    width: calc(18px * var(--dm-badge-scale, 1));
-    height: calc(18px * var(--dm-badge-scale, 1));
+    width: var(--dm-icon-size, 20px);
+    height: var(--dm-icon-size, 20px);
     object-fit: contain;
 }
 
@@ -202,16 +202,16 @@ html, body {
 }
 
 .danmaku-item .danmaku-badges img {
-    width: 16px;
-    height: 16px;
+    width: var(--dm-icon-size, 20px);
+    height: var(--dm-icon-size, 20px);
     object-fit: contain;
 }
 
 /* ---- Avatar ---- */
 .danmaku-item .danmaku-avatar {
     flex-shrink: 0;
-    width: var(--dm-avatar-size, 20px);
-    height: var(--dm-avatar-size, 20px);
+    width: var(--dm-icon-size, 20px);
+    height: var(--dm-icon-size, 20px);
     border-radius: 50%;
     object-fit: cover;
     border: 1.5px solid rgba(255, 255, 255, 0.3);

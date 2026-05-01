@@ -10,7 +10,7 @@ const CFG = {
     // Layer
     LAYER: getURLParam("layer", "middle"),
     // Font
-    fontSize: Number(getURLParam("fontSize", 1)),
+    fontSize: Number(getURLParam("fontSize", 2)),
     chatFontFamily: getURLParam("chatFontFamily", "DM Sans"),
     fontWeight: getURLParam("fontWeight", "normal"),
     // Background
@@ -31,15 +31,14 @@ const CFG = {
     chatBorder: getURLParam("chatBorder", "none"),
     danmakuOpacity: Number(getURLParam("danmakuOpacity", 1)),
     textShadow: getURLParam("textShadow", "medium"),
-    // Badges & Avatars
+    // Badges, Avatars & Platform Logo — all share one size (pixels)
     showBadges: getURLParam("showBadges", true),
     showAvatar: getURLParam("showAvatar", true),
-    avatarSize: Number(getURLParam("avatarSize", 20)),
+    iconSize: Number(getURLParam("iconSize", 0)),  // 0 = auto-scale with fontSize
     showUsername: getURLParam("showUsername", true),
     showSeparator: getURLParam("showSeparator", true),
     // Platform Badge
     platformBadge: getURLParam("platformBadge", "logo"),
-    badgeSize: Number(getURLParam("badgeSize", 1.1)),
     // Padding
     paddingX: Number(getURLParam("paddingX", 12)),
     paddingY: Number(getURLParam("paddingY", 4)),
@@ -92,8 +91,8 @@ root.setProperty('--dm-gap', CFG.elementGap + 'px');
 root.setProperty('--dm-padding-x', CFG.paddingX + 'px');
 root.setProperty('--dm-padding-y', CFG.paddingY + 'px');
 root.setProperty('--dm-radius', CFG.borderRadius + 'px');
-root.setProperty('--dm-avatar-size', CFG.avatarSize + 'px');
-root.setProperty('--dm-badge-scale', CFG.badgeSize);
+var effectiveIconSize = CFG.iconSize > 0 ? CFG.iconSize : Math.round(20 * CFG.fontSize);
+root.setProperty('--dm-icon-size', effectiveIconSize + 'px');
 root.setProperty('--dm-highlight-color', CFG.highlightValueColor);
 root.setProperty('--dm-event-opacity', CFG.eventOpacity);
 root.setProperty('--dm-event-pad-x', CFG.eventPaddingX + 'px');
@@ -238,7 +237,7 @@ function buildPlatformBadge(platform) {
     var style = CFG.platformBadge;
     if (style === 'off') return '';
     var imgSrc = 'js/modules/' + platform + '/images/logo-' + platform + '.svg';
-    var scale = CFG.badgeSize;
+    var size = effectiveIconSize;
     var colors = {
         twitch: '#9146ff', youtube: '#ff0000', kick: '#53fc18', tiktok: '#ff0050',
         streamelements: '#62c54e', streamlabs: '#32a0da', patreon: '#ff424d',
@@ -251,23 +250,19 @@ function buildPlatformBadge(platform) {
         fourthwall: 'yellow platform'
     };
     var color = colors[platform] || '#888';
-    var logoSize = Math.round(18 * scale);
     if (style === 'logo') {
-        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + logoSize + 'px;height:' + logoSize + 'px;"></span>';
+        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '"></span>';
     }
     if (style === 'pill') {
-        // Colored dot, same size as logo
-        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;justify-content:center;width:' + logoSize + 'px;height:' + logoSize + 'px;flex-shrink:0;"><span style="width:' + logoSize + 'px;height:' + logoSize + 'px;border-radius:50%;background:' + color + ';display:block;"></span></span>';
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;justify-content:center;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;"><span style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + color + ';display:block;"></span></span>';
     }
     if (style === 'name') {
-        // Platform name with colored background pill
         var name = platform.charAt(0).toUpperCase() + platform.slice(1);
-        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;background:' + color + ';border-radius:4px;padding:2px 6px;font-size:' + Math.round(10 * scale) + 'px;font-weight:600;color:#fff;">' + name + '</span>';
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;background:' + color + ';border-radius:4px;padding:2px 6px;font-size:' + Math.round(size * 0.55) + 'px;font-weight:600;color:#fff;">' + name + '</span>';
     }
     if (style === 'hider') {
-        // Color name instead of platform name (e.g. "purple platform")
         var colorName = colorNames[platform] || (color + ' platform');
-        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;background:' + color + ';border-radius:4px;padding:2px 6px;font-size:' + Math.round(10 * scale) + 'px;font-weight:600;color:#fff;">' + colorName + '</span>';
+        return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;flex-shrink:0;background:' + color + ';border-radius:4px;padding:2px 6px;font-size:' + Math.round(size * 0.55) + 'px;font-weight:600;color:#fff;">' + colorName + '</span>';
     }
     return '';
 }

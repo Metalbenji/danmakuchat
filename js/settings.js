@@ -14,7 +14,7 @@
     // Preview
     enableDemo: true,
     // General
-    fontSize: 1,
+    fontSize: 2,
     chatFontFamily: 'DM Sans',
     fontWeight: 'normal',
     bgColor: '#000000',
@@ -35,12 +35,11 @@
     // Appearance - Badges & Avatars
     showBadges: true,
     showAvatar: true,
-    avatarSize: 20,
+    iconSize: 0,  // 0 = auto-scale with fontSize
     showUsername: true,
     showSeparator: true,
     // Appearance - Platform Badge
     platformBadge: 'logo',
-    badgeSize: 1.1,
     // Appearance - Message Padding
     paddingX: 12,
     paddingY: 4,
@@ -204,11 +203,11 @@
             { value: 'medium', label: 'Medium' },
             { value: 'heavy', label: 'Heavy' },
           ]},
-          // Badges & Avatars
-          { key: '_sub_badges', label: 'Badges & Avatars', type: 'subsection' },
+          // Badges, Avatars & Platform Logo
+          { key: '_sub_badges', label: 'Icons (Avatar, Badges, Logo)', type: 'subsection' },
           { key: 'showBadges', label: 'Show Badges', type: 'toggle' },
           { key: 'showAvatar', label: 'Show Avatars', type: 'toggle' },
-          { key: 'avatarSize', label: 'Avatar Size', type: 'range', min: 0, max: 40, step: 2, unit: 'px' },
+          { key: 'iconSize', label: 'Icon Size', type: 'range', min: 0, max: 60, step: 2, unit: 'px' },
           { key: 'showUsername', label: 'Show Username', type: 'toggle' },
           { key: 'showSeparator', label: 'Show Separator', type: 'toggle' },
           // Platform Badge
@@ -220,7 +219,6 @@
             { value: 'hider', label: 'Hider (icon only)' },
             { value: 'off', label: 'Off' },
           ]},
-          { key: 'badgeSize', label: 'Badge Size', type: 'range', min: 0.5, max: 2, step: 0.1, unit: 'x' },
           // Message Padding
           { key: '_sub_padding', label: 'Message Padding', type: 'subsection' },
           { key: 'paddingX', label: 'Horizontal Padding', type: 'range', min: 2, max: 24, step: 2, unit: 'px' },
