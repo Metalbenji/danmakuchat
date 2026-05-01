@@ -185,6 +185,23 @@ function _sbConnect() {
                 // Get event payload — try both formats
                 var eventData = msg.data || msg.event.data || {};
 
+                // DEBUG: Show the data structure for first 2 events
+                if (_sbEventCount <= 2) {
+                    var dataKeys = Object.keys(eventData);
+                    var preview = {};
+                    dataKeys.slice(0, 10).forEach(function(k) {
+                        var v = eventData[k];
+                        if (v && typeof v === 'object') {
+                            preview[k] = Object.keys(v);
+                        } else if (typeof v === 'string' && v.length > 40) {
+                            preview[k] = v.substring(0, 40) + '...';
+                        } else {
+                            preview[k] = v;
+                        }
+                    });
+                    _sbDebug('DATA keys: ' + JSON.stringify(preview));
+                }
+
                 // Build response object matching what @streamerbot/client provided
                 // The handlers expect response.data to be the event payload
                 var response = {
