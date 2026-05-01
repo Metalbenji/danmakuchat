@@ -254,7 +254,10 @@ function buildPlatformBadge(platform) {
 // ---- Danmaku Creation ----
 
 function createDanmakuChat(platform, data) {
-    if (!shouldShowMessage('chat')) return;
+    if (!shouldShowMessage('chat')) {
+        _sbDebug('DANMAKU: blocked by shouldShowMessage');
+        return;
+    }
 
     // Filtering
     if (CFG.ignoreCommands && data.text && data.text.startsWith('!')) return;

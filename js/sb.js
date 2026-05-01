@@ -44,7 +44,16 @@ function _sbEmit(eventName, data) {
     var handlers = _sbHandlers[eventName];
     if (!handlers || handlers.length === 0) return;
     handlers.forEach(function(h) {
-        try { h(data); } catch(err) {
+        try {
+            var result = h(data);
+            // Catch async errors (handlers are often async functions)
+            if (result && typeof result.catch === 'function') {
+                result.catch(function(err) {
+                    console.error('[DanmakuChat] Async handler error for ' + eventName + ':', err);
+                    _sbDebug('ASYNC ERROR: ' + eventName + ': ' + (err.message || err));
+                });
+            }
+        } catch(err) {
             console.error('[DanmakuChat] Handler error for ' + eventName + ':', err);
             _sbDebug('HANDLER ERROR: ' + eventName + ': ' + err.message);
         }
@@ -56,7 +65,7 @@ function _sbEmit(eventName, data) {
 var _sbDebugEl = null;
 var _sbDebugTimeout = null;
 var _sbDebugLog = [];
-var _sbMaxLogLines = 12;
+var _sbMaxLogLines = 8;
 
 function _sbInitDebug() {
     var el = document.createElement('div');
@@ -74,7 +83,7 @@ function _sbDebug(msg) {
     _sbDebugLog.push(msg);
     if (_sbDebugLog.length > _sbMaxLogLines) _sbDebugLog.shift();
     _sbDebugEl.textContent = _sbDebugLog.join('\n');
-    // Auto-hide after 15s of no updates (only when connected)
+    // Auto-hide after 8s of no updates (only when connected)
     if (_sbDebugTimeout) clearTimeout(_sbDebugTimeout);
     _sbDebugTimeout = setTimeout(function() {
         if (_sbDebugEl && _sbConnected && _sbHelloReceived) {
@@ -82,7 +91,7 @@ function _sbDebug(msg) {
             _sbDebugEl.style.opacity = '0';
             setTimeout(function() { if (_sbDebugEl) _sbDebugEl.remove(); _sbDebugEl = null; }, 1000);
         }
-    }, 15000);
+    }, 8000);
 }
 
 // ─── Raw WebSocket Connection ─────────────────
@@ -124,11 +133,8 @@ function _sbConnect() {
             if (!event.data || typeof event.data !== 'string') return;
             var msg = JSON.parse(event.data);
 
-            // Log every raw message to debug overlay (truncate long ones)
-            var rawStr = JSON.stringify(msg);
-            if (rawStr.length > 120) rawStr = rawStr.substring(0, 120) + '...';
+            // Only log to console, NOT to debug overlay (too noisy)
             var msgType = msg.request || (msg.event ? msg.event.source + '.' + msg.event.type : '?');
-            _sbDebug('<< ' + msgType + ': ' + rawStr);
             console.log('[DanmakuChat] Received:', msgType, msg);
 
             // ── Step 1: Handle Hello message ──
@@ -185,23 +191,6 @@ function _sbConnect() {
                 // Get event payload — try both formats
                 var eventData = msg.data || msg.event.data || {};
 
-                // DEBUG: Show the data structure for first 2 events
-                if (_sbEventCount <= 2) {
-                    var dataKeys = Object.keys(eventData);
-                    var preview = {};
-                    dataKeys.slice(0, 10).forEach(function(k) {
-                        var v = eventData[k];
-                        if (v && typeof v === 'object') {
-                            preview[k] = Object.keys(v);
-                        } else if (typeof v === 'string' && v.length > 40) {
-                            preview[k] = v.substring(0, 40) + '...';
-                        } else {
-                            preview[k] = v;
-                        }
-                    });
-                    _sbDebug('DATA keys: ' + JSON.stringify(preview));
-                }
-
                 // Build response object matching what @streamerbot/client provided
                 // The handlers expect response.data to be the event payload
                 var response = {
@@ -211,12 +200,13 @@ function _sbConnect() {
                 };
 
                 _sbEmit(handlerKey, response);
-                _sbEmit('Raw.Event', msg);
 
-                // Show first few events in debug overlay
-                if (_sbEventCount <= 3) {
-                    _sbDebug('Event #' + _sbEventCount + ': ' + handlerKey);
-                } else if (_sbEventCount === 4) {
+                // Show first event in debug overlay
+                if (_sbEventCount <= 1) {
+                    var firstText = eventData.text || '(no text)';
+                    var firstUser = eventData.message ? eventData.message.username : (eventData.user_name || '?');
+                    _sbDebug('Event #' + _sbEventCount + ': ' + handlerKey + ' [' + firstUser + ']: ' + firstText);
+                } else if (_sbEventCount === 2) {
                     _sbDebug('Connected — ' + _sbEventCount + ' events received');
                 }
             }

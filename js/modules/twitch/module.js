@@ -190,7 +190,10 @@ async function twitchChatMessage(data) {
     if (!data) return;
 
     var user = _twitchUser(data);
-    if (!user) return;
+    if (!user) {
+        _sbDebug('TWITCH: no user found in data');
+        return;
+    }
 
     var userLogin = user.login || '';
     if (ignoreUserList.includes(userLogin.toLowerCase())) return;
@@ -198,18 +201,24 @@ async function twitchChatMessage(data) {
     var text = data.text || '';
     if (text.startsWith('!') && ignoreCommands === true) return;
 
-    var avatarImage = await getTwitchAvatar(userLogin);
-    var badgeList = await getTwitchBadges(user.badges);
-    var messageFromParts = await getTwitchMessageFromParts(data.parts);
+    try {
+        var avatarImage = await getTwitchAvatar(userLogin);
+        var badgeList = await getTwitchBadges(user.badges);
+        var messageFromParts = await getTwitchMessageFromParts(data.parts);
 
-    createDanmakuChat('twitch', {
-        text: text,
-        messageHtml: safeSanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] }),
-        username: user.displayName || userLogin,
-        color: user.color,
-        avatar: avatarImage,
-        badges: badgeList
-    });
+        _sbDebug('TWITCH: calling createDanmaku [' + (user.displayName || userLogin) + '] ' + text);
+        createDanmakuChat('twitch', {
+            text: text,
+            messageHtml: safeSanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] }),
+            username: user.displayName || userLogin,
+            color: user.color,
+            avatar: avatarImage,
+            badges: badgeList
+        });
+    } catch(err) {
+        _sbDebug('TWITCH ERROR: ' + (err.message || err));
+        console.error('[Twitch] twitchChatMessage error:', err);
+    }
 }
 
 async function twitchFollowMessage(data) {
