@@ -27,7 +27,7 @@
     <link href="js/modules/kofi/module.css" rel="stylesheet">
     <link href="js/modules/fourthwall/module.css" rel="stylesheet">
 
-    <!-- Cache-bust local CSS in preview mode so slider changes apply immediately -->
+    <!-- Cache-bust local CSS & JS in preview mode so slider changes apply immediately -->
     <script>
     (function(){
         var p = new URLSearchParams(location.search);
@@ -45,23 +45,36 @@
 <body>
     <div id="danmaku-layer"></div>
 
-    <!-- Sanitizer (bundled locally for file:// compatibility) -->
-    <script src="js/vendor/purify.min.js"></script>
-
-    <!-- Core — sb.js uses raw WebSocket, no library needed -->
-    <script src="js/sb.js"></script>
-    <script src="js/danmaku.js"></script>
-
-    <!-- Platform Modules -->
-    <script src="js/modules/twitch/module.js"></script>
-    <script src="js/modules/youtube/module.js"></script>
-    <script src="js/modules/tiktok/module.js"></script>
-    <script src="js/modules/kick/module.js"></script>
-    <script src="js/modules/streamelements/module.js"></script>
-    <script src="js/modules/streamlabs/module.js"></script>
-    <script src="js/modules/patreon/module.js"></script>
-    <script src="js/modules/tipeeestream/module.js"></script>
-    <script src="js/modules/kofi/module.js"></script>
-    <script src="js/modules/fourthwall/module.js"></script>
+    <!-- JS files loaded dynamically to support cache-busting in preview mode -->
+    <script>
+    (function(){
+        var ts = new URLSearchParams(location.search).get('_t') || '';
+        var cb = ts ? ('?_t=' + ts) : '';
+        var scripts = [
+            'js/vendor/purify.min.js',
+            'js/sb.js',
+            'js/danmaku.js',
+            'js/modules/twitch/module.js',
+            'js/modules/youtube/module.js',
+            'js/modules/tiktok/module.js',
+            'js/modules/kick/module.js',
+            'js/modules/streamelements/module.js',
+            'js/modules/streamlabs/module.js',
+            'js/modules/patreon/module.js',
+            'js/modules/tipeeestream/module.js',
+            'js/modules/kofi/module.js',
+            'js/modules/fourthwall/module.js'
+        ];
+        function loadNext() {
+            if (scripts.length === 0) return;
+            var s = document.createElement('script');
+            s.src = scripts.shift() + cb;
+            s.onload = loadNext;
+            s.onerror = loadNext;
+            document.body.appendChild(s);
+        }
+        loadNext();
+    })();
+    </script>
 </body>
 </html>

@@ -251,7 +251,7 @@ function buildPlatformBadge(platform) {
     };
     var color = colors[platform] || '#888';
     if (style === 'logo') {
-        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '"></span>';
+        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;flex-shrink:0;"></span>';
     }
     if (style === 'pill') {
         return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;justify-content:center;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;"><span style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + color + ';display:block;"></span></span>';
@@ -340,6 +340,15 @@ function createDanmakuChat(platform, data) {
         ADD_ATTR: ['src', 'alt', 'title', 'class', 'style']
     });
 
+    // Force-set platform logo size directly on DOM — bypasses any CSS/cache issue
+    var logoImg = el.querySelector('.danmaku-platform img');
+    if (logoImg) {
+        logoImg.style.setProperty('width', effectiveIconSize + 'px', 'important');
+        logoImg.style.setProperty('height', effectiveIconSize + 'px', 'important');
+        logoImg.style.setProperty('object-fit', 'contain', 'important');
+        logoImg.style.setProperty('flex-shrink', '0', 'important');
+    }
+
     spawnDanmaku(el, false);
 }
 
@@ -399,6 +408,15 @@ function createDanmakuEvent(platform, data) {
         ADD_TAGS: ['img'],
         ADD_ATTR: ['src', 'alt', 'title', 'class', 'style']
     });
+
+    // Force-set platform logo size directly on DOM — bypasses any CSS/cache issue
+    var logoImg = el.querySelector('.danmaku-platform img');
+    if (logoImg) {
+        logoImg.style.setProperty('width', effectiveIconSize + 'px', 'important');
+        logoImg.style.setProperty('height', effectiveIconSize + 'px', 'important');
+        logoImg.style.setProperty('object-fit', 'contain', 'important');
+        logoImg.style.setProperty('flex-shrink', '0', 'important');
+    }
 
     spawnDanmaku(el, true);
 }
