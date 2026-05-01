@@ -132,6 +132,7 @@ if (showTwitch) {
 
 async function getTwitchBadges(badges) {
     if (!badges || !Array.isArray(badges)) return '';
+    var sz = (typeof effectiveIconSize !== 'undefined') ? effectiveIconSize : 20;
     return badges.map(function(badge) {
         // Prefer Streamer.bot's provided imageUrl (most reliable)
         var src = badge.imageUrl || '';
@@ -143,7 +144,7 @@ async function getTwitchBadges(badges) {
             src = 'https://badges.twitch.tv/v1/badges/' + badge.id + '/' + (badge.version || 1);
         }
         if (!src) return '';
-        return '<img src="' + src + '" class="badge" alt="" onerror="this.style.display=\'none\'">';
+        return '<img src="' + src + '" class="badge" alt="" style="width:' + sz + 'px;height:' + sz + 'px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">';
     }).join('');
 }
 
@@ -166,8 +167,9 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
     // Always works, no network required.
     var initial = login.charAt(0).toUpperCase();
     var bgColor = color || '#6441a5'; // Twitch purple default
+    var sz = (typeof effectiveIconSize !== 'undefined') ? effectiveIconSize : 20;
     var avatarHtml = '<span class="danmaku-avatar-inline" style="background:' + bgColor +
-        ';color:#fff;font-weight:700;font-size:inherit;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;">' +
+        ';color:#fff;font-weight:700;font-size:inherit;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;width:' + sz + 'px;height:' + sz + 'px;border:1.5px solid rgba(255,255,255,0.3);">' +
         escapeHTML(initial) + '</span>';
     twitchAvatars.set(login, avatarHtml);
     return avatarHtml;

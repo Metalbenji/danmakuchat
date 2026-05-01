@@ -251,7 +251,7 @@ function buildPlatformBadge(platform) {
     };
     var color = colors[platform] || '#888';
     if (style === 'logo') {
-        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '"></span>';
+        return '<span class="danmaku-platform"><img src="' + imgSrc + '" alt="' + platform + '" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;flex-shrink:0;"></span>';
     }
     if (style === 'pill') {
         return '<span class="danmaku-platform" style="display:inline-flex;align-items:center;justify-content:center;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;"><span style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + color + ';display:block;"></span></span>';
@@ -303,8 +303,8 @@ function createDanmakuChat(platform, data) {
             // Inline HTML avatar (generated initial circle)
             html += data.avatar;
         } else {
-            // URL — use img tag
-            html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" onerror="this.style.display=\'none\'">';
+            // URL — use img tag with explicit inline sizing
+            html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" style="width:' + effectiveIconSize + 'px;height:' + effectiveIconSize + 'px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0;" onerror="this.style.display=\'none\'">';
         }
     }
 
