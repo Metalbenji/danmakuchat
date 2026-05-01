@@ -31,6 +31,7 @@ const twitchStreamer = {};
 // Streamer.bot uses different structures per event type.
 // ChatMessage nests user info under data.message
 // Other events use data.user (nested object) or flat fields like data.user_name
+// Streamer.bot includes profileImageUrl in the user data — no separate API call needed.
 function _twitchUser(data) {
     // ChatMessage: data.message.username, data.message.displayName, etc.
     if (data.message && data.message.username) {
@@ -41,6 +42,7 @@ function _twitchUser(data) {
             color:      data.message.color,
             badges:     data.message.badges,
             id:         data.message.userId || data.message.userID,
+            profileImageUrl: data.message.profileImageUrl || '',
         };
     }
     // Other events: data.user (nested object)
@@ -52,6 +54,7 @@ function _twitchUser(data) {
             color:      data.user.color,
             badges:     data.user.badges,
             id:         data.user.id || data.user.userId,
+            profileImageUrl: data.user.profileImageUrl || '',
         };
     }
     // Flat fields (Follow, Raid, RewardRedemption, etc.)
@@ -63,6 +66,7 @@ function _twitchUser(data) {
             color:      data.color,
             badges:     data.badges,
             id:         data.user_id,
+            profileImageUrl: data.profileImageUrl || data.user_profileImageUrl || '',
         };
     }
     return null;
@@ -143,34 +147,27 @@ async function getTwitchBadges(badges) {
     }).join('');
 }
 
-async function getTwitchAvatar(login, color) {
+async function getTwitchAvatar(login, color, profileImageUrl) {
     if (!login) return '';
-    // Try Twitch API first (works when served over http, not file://)
+    // Check cache first
     if (twitchAvatars.has(login)) return twitchAvatars.get(login);
 
-    try {
-        var resp = await fetch('https://api.twitch.tv/helix/users?login=' + encodeURIComponent(login), {
-            headers: {
-                'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko'
-            }
-        });
-        if (resp.ok) {
-            var result = await resp.json();
-            var url = result.data && result.data[0] && result.data[0].profile_image_url;
-            if (url) {
-                twitchAvatars.set(login, url);
-                return url;
-            }
-        }
-    } catch (e) {
-        // fetch fails from file:// — generate inline avatar
+    // Prefer Streamer.bot's provided profileImageUrl (from event data).
+    // This URL points to Twitch CDN (static-cdn.jtvnw.net) which loads fine
+    // even from file:// via <img> tags — no CORS issue with images.
+    // Streamer.bot already fetches this from the Twitch API, so no extra
+    // round-trip needed.
+    if (profileImageUrl && profileImageUrl.indexOf('http') === 0) {
+        twitchAvatars.set(login, profileImageUrl);
+        return profileImageUrl;
     }
 
-    // Generate a CSS avatar circle with the user's initial (always works, no network)
+    // Ultimate fallback: CSS circle with the user's initial letter.
+    // Always works, no network required.
     var initial = login.charAt(0).toUpperCase();
     var bgColor = color || '#6441a5'; // Twitch purple default
     var avatarHtml = '<span class="danmaku-avatar-inline" style="background:' + bgColor +
-        ';color:#fff;font-weight:700;font-size:' + Math.max(10, 14) + 'px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;">' +
+        ';color:#fff;font-weight:700;font-size:inherit;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;">' +
         escapeHTML(initial) + '</span>';
     twitchAvatars.set(login, avatarHtml);
     return avatarHtml;
@@ -211,7 +208,7 @@ async function twitchChatMessage(data) {
     if (text.startsWith('!') && ignoreCommands === true) return;
 
     try {
-        var avatarImage = await getTwitchAvatar(userLogin, user.color);
+        var avatarImage = await getTwitchAvatar(userLogin, user.color, user.profileImageUrl);
         var badgeList = await getTwitchBadges(user.badges);
         var messageFromParts = await getTwitchMessageFromParts(data.parts);
 
