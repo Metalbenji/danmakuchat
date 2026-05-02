@@ -752,7 +752,6 @@
           '<div class="step"><div class="step-num">3</div><div class="step-content"><h4>Custom Size</h4><p>Set each browser source to the same dimensions (e.g., your full stream resolution). Set <strong>width</strong> and <strong>height</strong> in the browser source properties.</p></div></div>' +
           '<div class="step"><div class="step-num">4</div><div class="step-content"><h4>Transparent Background</h4><p>Make sure "Transparent background" is <strong>checked</strong> in each browser source so only the danmaku messages are visible over your stream.</p></div></div>' +
         '</div>' +
-        '<div class="obs-note"><strong>No Docker needed!</strong> Just open <code>settings.html</code> from your local files. The layer URLs will use <code>file:///</code> paths that work directly in OBS browser sources. If you prefer Docker, the URLs will auto-detect and use <code>http://</code> instead.</div>' +
       '</div>';
 
     container.appendChild(sectionEl);

@@ -1073,18 +1073,3 @@ html, body {
   min-width: 0;
 }
 
-/* ─── Obs section note ─── */
-
-.obs-note {
-  font-size: 11px;
-  color: var(--text-muted);
-  padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
-  margin-top: 8px;
-  line-height: 1.5;
-}
-
-.obs-note strong {
-  color: var(--text-secondary);
-}
