@@ -91,7 +91,6 @@ root.setProperty('--dm-radius', CFG.borderRadius + 'px');
 var effectiveIconSize = CFG.iconSize > 0 ? CFG.iconSize : Math.round(20 * CFG.fontSize);
 root.setProperty('--dm-icon-size', effectiveIconSize + 'px');
 root.setProperty('--dm-highlight-color', CFG.highlightValueColor);
-root.setProperty('--dm-event-opacity', CFG.eventOpacity);
 root.setProperty('--dm-event-pad-x', CFG.eventPaddingX + 'px');
 root.setProperty('--dm-event-pad-y', CFG.eventPaddingY + 'px');
 
@@ -366,6 +365,20 @@ function createDanmakuEvent(platform, data) {
     var cls = 'danmaku-item event ' + platform;
     cls += ' event-style-' + CFG.eventStyle;
     el.className = cls;
+
+    // Apply event background via inline style so the alpha comes from
+    // the eventOpacity setting — the Event Opacity slider directly
+    // controls how see-through the background is.
+    var a = CFG.eventOpacity;
+    if (CFG.eventStyle === 'solid') {
+        el.style.background = 'linear-gradient(135deg, rgba(128,0,255,' + a + '), rgba(255,0,128,' + a + '))';
+    } else if (CFG.eventStyle === 'glass') {
+        el.style.background = 'rgba(255,255,255,' + (a * 0.15) + ')';
+    } else if (CFG.eventStyle === 'bordered') {
+        el.style.background = 'transparent';
+    } else if (CFG.eventStyle === 'minimal') {
+        el.style.background = 'transparent';
+    }
 
     if (!CFG.eventPlatformColors) {
         el.classList.add('event-no-platform-color');

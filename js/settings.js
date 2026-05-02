@@ -267,7 +267,7 @@
             { value: 'bordered', label: 'Bordered' },
             { value: 'minimal', label: 'Minimal' },
           ]},
-          { key: 'eventOpacity', label: 'Event Opacity', type: 'range', min: 0.3, max: 1, step: 0.05, unit: '' },
+          { key: 'eventOpacity', label: 'Event BG Opacity', type: 'range', min: 0, max: 1, step: 0.05, unit: '' },
           { key: 'eventFontSize', label: 'Event Font Size', type: 'select', options: [
             { value: 'same', label: 'Same as chat' },
             { value: 'slightly-larger', label: 'Slightly larger' },
