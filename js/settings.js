@@ -14,7 +14,7 @@
     // Preview
     enableDemo: true,
     // General
-    fontSize: 2,
+    fontSize: 2.5,
     chatFontFamily: 'DM Sans',
     fontWeight: 'normal',
     bgColor: '#000000',
@@ -858,8 +858,10 @@
   }
 
   // ─── Scale Preview to Fit Container ─────────
-  // Uses transform:scale() so iframes render at their native resolution
+  // Uses a two-element approach so iframes render at native resolution
   // (matching OBS exactly) while being visually scaled to fit the panel.
+  // Outer div takes up the scaled size in layout flow.
+  // Inner div holds content at native size with transform:scale().
   function scalePreview() {
     var previewContainer = document.getElementById('preview-container');
     if (!previewContainer) return;
@@ -871,7 +873,6 @@
     var availH = rect.height - 32;
     if (availW <= 0 || availH <= 0) return;
 
-    // Read the native resolution from the data attributes
     var nativeW = parseInt(scaleWrapper.getAttribute('data-native-w')) || 1280;
     var nativeH = parseInt(scaleWrapper.getAttribute('data-native-h')) || 720;
 
@@ -879,9 +880,18 @@
     var displayW = Math.round(nativeW * scale);
     var displayH = Math.round(nativeH * scale);
 
-    scaleWrapper.style.transform = 'scale(' + scale + ')';
+    // Outer wrapper: occupies the scaled space in layout
     scaleWrapper.style.width = displayW + 'px';
     scaleWrapper.style.height = displayH + 'px';
+
+    // Inner content div: native size, visually scaled down
+    var inner = scaleWrapper.querySelector('.preview-scale-inner');
+    if (inner) {
+      inner.style.width = nativeW + 'px';
+      inner.style.height = nativeH + 'px';
+      inner.style.transform = 'scale(' + scale + ')';
+      inner.style.transformOrigin = 'top left';
+    }
   }
 
   // ─── Refresh Preview ───────────────────────
@@ -912,18 +922,24 @@
     var oldScaleWrapper = previewContainer.querySelector('.preview-scale-wrapper');
     if (oldScaleWrapper) oldScaleWrapper.remove();
 
-    // Create a scale wrapper that holds the content at native resolution
+    // Outer wrapper: occupies scaled dimensions in layout flow
     var scaleWrapper = document.createElement('div');
     scaleWrapper.className = 'preview-scale-wrapper';
     scaleWrapper.setAttribute('data-native-w', w);
     scaleWrapper.setAttribute('data-native-h', h);
-    scaleWrapper.style.width = w + 'px';
-    scaleWrapper.style.height = h + 'px';
-    scaleWrapper.style.position = 'relative';
     scaleWrapper.style.overflow = 'hidden';
     scaleWrapper.style.borderRadius = 'var(--radius)';
     scaleWrapper.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)';
     scaleWrapper.style.border = '1px solid var(--border)';
+
+    // Inner wrapper: holds content at native resolution, gets scaled
+    var inner = document.createElement('div');
+    inner.className = 'preview-scale-inner';
+    inner.style.position = 'relative';
+    inner.style.width = w + 'px';
+    inner.style.height = h + 'px';
+    inner.style.transformOrigin = 'top left';
+    inner.style.background = '#000';
 
     if (isAll) {
       // All-layers mode: stack 3 iframes on top of each other
@@ -935,17 +951,16 @@
         iframe.src = generateURL(l, true);
         iframe.allowTransparency = 'true';
         iframe.allow = 'autoplay';
-        // Use HTML attributes for intrinsic size (matches OBS viewport)
-        iframe.setAttribute('width', w);
-        iframe.setAttribute('height', h);
         iframe.style.position = 'absolute';
         iframe.style.top = '0';
         iframe.style.left = '0';
+        iframe.style.width = w + 'px';
+        iframe.style.height = h + 'px';
         iframe.style.border = 'none';
         iframe.style.borderRadius = '0';
         iframe.style.zIndex = i + 1;
         iframe.style.background = i === 0 ? '#000' : 'transparent';
-        scaleWrapper.appendChild(iframe);
+        inner.appendChild(iframe);
       });
     } else {
       // Single-layer mode: one iframe
@@ -955,12 +970,14 @@
       iframe.src = generateURL(layer, true);
       iframe.allowTransparency = 'true';
       iframe.allow = 'autoplay';
-      // Use HTML attributes for intrinsic size (matches OBS viewport)
-      iframe.setAttribute('width', w);
-      iframe.setAttribute('height', h);
-      scaleWrapper.appendChild(iframe);
+      iframe.style.width = w + 'px';
+      iframe.style.height = h + 'px';
+      iframe.style.border = 'none';
+      iframe.style.borderRadius = '0';
+      inner.appendChild(iframe);
     }
 
+    scaleWrapper.appendChild(inner);
     previewContainer.appendChild(scaleWrapper);
     // Scale after appending so getBoundingClientRect works
     requestAnimationFrame(function() { scalePreview(); });

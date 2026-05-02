@@ -863,11 +863,16 @@ html, body {
   border: none;
   border-radius: 0;
   background: #000;
-  flex-shrink: 0;
 }
 
+/* Outer: occupies scaled dimensions in layout flow */
 .preview-scale-wrapper {
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Inner: holds content at native resolution, gets transform:scale() */
+.preview-scale-inner {
   transform-origin: top left;
 }
 

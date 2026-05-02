@@ -10,7 +10,7 @@ const CFG = {
     // Layer
     LAYER: getURLParam("layer", "middle"),
     // Font
-    fontSize: Number(getURLParam("fontSize", 2)),
+    fontSize: Number(getURLParam("fontSize", 2.5)),
     chatFontFamily: getURLParam("chatFontFamily", "DM Sans"),
     fontWeight: getURLParam("fontWeight", "normal"),
     // Background
