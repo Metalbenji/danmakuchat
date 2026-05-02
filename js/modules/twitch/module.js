@@ -213,7 +213,7 @@ async function twitchChatMessage(data) {
 
     try {
         // Debug: log what Streamer.bot sends so we can verify avatar fields
-        console.debug('[Twitch] ChatMessage user data:', {
+        console.log('[Twitch] ChatMessage user data:', {
             login: userLogin,
             profileImageUrl: user.profileImageUrl,
             rawMsgFields: data.message ? Object.keys(data.message).filter(k => k.toLowerCase().includes('profile') || k.toLowerCase().includes('avatar') || k.toLowerCase().includes('image')) : []
