@@ -90,7 +90,8 @@ async function tiktokFollowMessage(data) {
     createDanmakuEvent('tiktok', {
         username: data.nickname || data.uniqueId || 'Unknown',
         color: '#ff0050',
-        action: 'just followed!'
+        action: 'just followed!',
+        avatar: data.profilePictureUrl || null
     });
 }
 
@@ -103,7 +104,8 @@ async function tiktokGiftMessage(data) {
         username: data.nickname || data.uniqueId || 'Unknown',
         color: '#ff0050',
         action: 'sent',
-        value: `${data.repeatCount}x ${data.giftName}`
+        value: `${data.repeatCount}x ${data.giftName}`,
+        avatar: data.profilePictureUrl || null
     });
 }
 
@@ -113,7 +115,8 @@ async function tiktokSubMessage(data) {
     createDanmakuEvent('tiktok', {
         username: data.nickname || data.uniqueId || 'Unknown',
         color: '#ff0050',
-        action: 'subscribed!'
+        action: 'subscribed!',
+        avatar: data.profilePictureUrl || null
     });
 }
 
@@ -123,7 +126,8 @@ async function tiktokJoinMessage(data) {
     createDanmakuEvent('tiktok', {
         username: data.nickname || data.uniqueId || 'Unknown',
         color: '#ff0050',
-        action: 'joined the stream'
+        action: 'joined the stream',
+        avatar: data.profilePictureUrl || null
     });
 }
 
@@ -133,7 +137,8 @@ async function tiktokShareMessage(data) {
     createDanmakuEvent('tiktok', {
         username: data.nickname || data.uniqueId || 'Unknown',
         color: '#ff0050',
-        action: 'shared the stream'
+        action: 'shared the stream',
+        avatar: data.profilePictureUrl || null
     });
 }
 
@@ -144,6 +149,7 @@ async function tiktokLikesMessage(data) {
         username: data.nickname || data.uniqueId || 'Unknown',
         color: '#ff0050',
         action: 'liked',
-        value: `${data.totalLikes} times`
+        value: `${data.totalLikes} times`,
+        avatar: data.profilePictureUrl || null
     });
 }

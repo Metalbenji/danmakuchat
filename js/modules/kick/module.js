@@ -102,8 +102,9 @@ async function setupKickWebSocket() {
 
 async function getKickAvatar(username) {
     if (kickAvatars.has(username)) return kickAvatars.get(username);
-    // Kick doesn't have a public avatar API, use a placeholder
-    const url = `https://api.adorable.io/avatars/40/${username}.png`;
+    // Generate a deterministic SVG avatar (gradient + silhouette).
+    // No dependency on third-party services.
+    const url = generateAvatarUrl(username, '');
     kickAvatars.set(username, url);
     return url;
 }

@@ -297,14 +297,11 @@ function createDanmakuChat(platform, data) {
         html += '<span class="danmaku-badges">' + data.badges + '</span>';
     }
 
-    // Avatar — can be a URL string or inline HTML (e.g. CSS initial circle)
-    if (CFG.showAvatar && data.avatar) {
-        if (data.avatar.charAt(0) === '<') {
-            // Inline HTML avatar (generated initial circle)
-            html += data.avatar;
-        } else {
-            // URL — use img tag with explicit inline sizing
-            html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" style="width:' + effectiveIconSize + 'px;height:' + effectiveIconSize + 'px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0;" onerror="this.style.display=\'none\'">';
+    // Avatar — URL or auto-generated placeholder
+    if (CFG.showAvatar) {
+        var avatarUrl = data.avatar || generateAvatarUrl(username, data.color);
+        if (avatarUrl) {
+            html += '<img class="danmaku-avatar" src="' + avatarUrl + '" alt="" style="width:' + effectiveIconSize + 'px;height:' + effectiveIconSize + 'px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0;">';
         }
     }
 
@@ -349,6 +346,13 @@ function createDanmakuChat(platform, data) {
         logoImg.style.setProperty('flex-shrink', '0', 'important');
     }
 
+    // Fallback: if real avatar URL fails, swap to generated placeholder
+    var fallbackAvatar = generateAvatarUrl(username, data.color);
+    var avatarEl = el.querySelector('.danmaku-avatar');
+    if (avatarEl && avatarEl.src.indexOf('data:') !== 0) {
+        avatarEl.onerror = function() { this.src = fallbackAvatar; };
+    }
+
     spawnDanmaku(el, false);
 }
 
@@ -374,12 +378,11 @@ function createDanmakuEvent(platform, data) {
         html += '<span class="danmaku-badges">' + data.badges + '</span>';
     }
 
-    // Avatar — can be a URL string or inline HTML (e.g. CSS initial circle)
-    if (CFG.showAvatar && data.avatar) {
-        if (data.avatar.charAt(0) === '<') {
-            html += data.avatar;
-        } else {
-            html += '<img class="danmaku-avatar" src="' + data.avatar + '" alt="" style="width:' + effectiveIconSize + 'px;height:' + effectiveIconSize + 'px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0;" onerror="this.style.display=\'none\'">';
+    // Avatar — URL or auto-generated placeholder
+    if (CFG.showAvatar) {
+        var evtAvatarUrl = data.avatar || generateAvatarUrl(data.username || '', data.color);
+        if (evtAvatarUrl) {
+            html += '<img class="danmaku-avatar" src="' + evtAvatarUrl + '" alt="" style="width:' + effectiveIconSize + 'px;height:' + effectiveIconSize + 'px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0;">';
         }
     }
 
@@ -416,6 +419,13 @@ function createDanmakuEvent(platform, data) {
         logoImg.style.setProperty('height', effectiveIconSize + 'px', 'important');
         logoImg.style.setProperty('object-fit', 'contain', 'important');
         logoImg.style.setProperty('flex-shrink', '0', 'important');
+    }
+
+    // Fallback: if real avatar URL fails, swap to generated placeholder
+    var evtFallbackAvatar = generateAvatarUrl(data.username || '', data.color);
+    var evtAvatarEl = el.querySelector('.danmaku-avatar');
+    if (evtAvatarEl && evtAvatarEl.src.indexOf('data:') !== 0) {
+        evtAvatarEl.onerror = function() { this.src = evtFallbackAvatar; };
     }
 
     spawnDanmaku(el, true);
@@ -494,6 +504,48 @@ function cullOldDanmaku() {
             removed++;
         }
     }
+}
+
+// ---- Avatar Generation ----
+// Generates a deterministic SVG data-URI avatar (gradient + silhouette).
+// No network needed — works from file:// and OBS Browser Source.
+function generateAvatarUrl(username, color, size) {
+    if (!username) return '';
+    var sz = size || effectiveIconSize || 40;
+
+    // Deterministic hash → unique gradient per user
+    var hash = 0;
+    for (var i = 0; i < username.length; i++) {
+        hash = ((hash << 5) - hash + username.charCodeAt(i)) | 0;
+    }
+    var hue1 = Math.abs(hash) % 360;
+    var hue2 = (hue1 + 45) % 360;
+
+    // Use provided color if available, otherwise use hash-derived gradient
+    var fill;
+    if (color && color.indexOf('#') === 0) {
+        fill = color;
+    } else {
+        fill = 'url(#ag)';
+    }
+
+    // Person silhouette path (generic user icon)
+    var headR = sz * 0.18;
+    var headCy = sz * 0.33;
+    var bodyTop = sz * 0.55;
+    var bodyW = sz * 0.6;
+
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + sz + '" height="' + sz + '" viewBox="0 0 ' + sz + ' ' + sz + '">'
+        + '<defs><linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="100%">'
+        + '<stop offset="0%" stop-color="hsl(' + hue1 + ',65%,45%)"/>'
+        + '<stop offset="100%" stop-color="hsl(' + hue2 + ',65%,35%)"/>'
+        + '</linearGradient></defs>'
+        + '<circle cx="' + (sz/2) + '" cy="' + (sz/2) + '" r="' + (sz/2) + '" fill="' + fill + '"/>'
+        + '<circle cx="' + (sz/2) + '" cy="' + headCy + '" r="' + headR + '" fill="rgba(255,255,255,0.85)"/>'
+        + '<ellipse cx="' + (sz/2) + '" cy="' + (sz * 0.92) + '" rx="' + bodyW + '" ry="' + (sz * 0.35) + '" fill="rgba(255,255,255,0.85)"/>'
+        + '</svg>';
+
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 
 // ---- Utilities ----

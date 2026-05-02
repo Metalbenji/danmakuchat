@@ -163,16 +163,10 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
         return profileImageUrl;
     }
 
-    // Ultimate fallback: CSS circle with the user's initial letter.
-    // Always works, no network required.
-    var initial = login.charAt(0).toUpperCase();
-    var bgColor = color || '#6441a5'; // Twitch purple default
-    var sz = (typeof effectiveIconSize !== 'undefined') ? effectiveIconSize : 20;
-    var avatarHtml = '<span class="danmaku-avatar-inline" style="background:' + bgColor +
-        ';color:#fff;font-weight:700;font-size:inherit;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;width:' + sz + 'px;height:' + sz + 'px;border:1.5px solid rgba(255,255,255,0.3);">' +
-        escapeHTML(initial) + '</span>';
-    twitchAvatars.set(login, avatarHtml);
-    return avatarHtml;
+    // Fallback: generate a deterministic SVG avatar (gradient + silhouette).
+    var fallback = generateAvatarUrl(login, color);
+    twitchAvatars.set(login, fallback);
+    return fallback;
 }
 
 async function getTwitchMessageFromParts(parts) {
