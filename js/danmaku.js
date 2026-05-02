@@ -229,7 +229,11 @@ function _getAssignedLayer(username, text) {
     return 'middle';
 }
 
-function shouldShowMessage(type, data) {
+function shouldShowMessage(type, data, forceFront) {
+    // Force to front layer (used for subscriber image messages)
+    if (forceFront) {
+        return CFG.LAYER === 'front';
+    }
     if (type === 'event') {
         // Events route to front or middle (never back), based on hash
         var username = (data && (data.username || data.user || '')) || '';
@@ -330,7 +334,17 @@ function buildEmbedImageHtml(text) {
 // ---- Danmaku Creation ----
 
 function createDanmakuChat(platform, data) {
-    if (!shouldShowMessage('chat', data)) return;
+    // Detect subscriber images before layer routing to force front layer
+    var forceFront = false;
+    if (CFG.subscriberImages) {
+        var textRaw = data.text || data.message || '';
+        var canEmbed = !CFG.subscriberImagesOnlySubs || data.isSubscriber;
+        if (canEmbed && detectImageUrls(textRaw).length > 0) {
+            forceFront = true;
+        }
+    }
+
+    if (!shouldShowMessage('chat', data, forceFront)) return;
 
     // Filtering
     if (CFG.ignoreCommands && data.text && data.text.startsWith('!')) return;
