@@ -224,13 +224,6 @@ async function twitchChatMessage(data) {
     if (text.startsWith('!') && ignoreCommands === true) return;
 
     try {
-        // Debug: log what Streamer.bot sends so we can verify avatar fields
-        console.log('[Twitch] ChatMessage user data:', {
-            login: userLogin,
-            profileImageUrl: user.profileImageUrl,
-            rawMsgFields: data.message ? Object.keys(data.message).filter(k => k.toLowerCase().includes('profile') || k.toLowerCase().includes('avatar') || k.toLowerCase().includes('image')) : []
-        });
-
         var avatarImage = await getTwitchAvatar(userLogin, user.color, user.profileImageUrl);
         var badgeList = await getTwitchBadges(user.badges);
         var messageFromParts = await getTwitchMessageFromParts(data.parts);
