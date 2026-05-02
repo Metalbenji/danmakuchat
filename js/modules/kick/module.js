@@ -113,9 +113,13 @@ async function getKickBadges(badges) {
     if (!badges || !Array.isArray(badges)) return '';
     const badgesArray = [];
 
+    // Pre-load subscriber badge data if needed
+    if (badges.some(b => b.type === 'subscriber') && kickSubBadges.length === 0) {
+        await loadKickSubBadges();
+    }
+
     badges.forEach(badge => {
         if (badge.type === 'subscriber') {
-            if (kickSubBadges.length === 0) await loadKickSubBadges();
             const targetMonths = badge.count;
             const eligible = kickSubBadges
                 .filter(b => b.months <= targetMonths)

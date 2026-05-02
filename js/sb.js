@@ -223,7 +223,7 @@ function _sbSubscribe() {
 
     try {
         _sbWebSocket.send(JSON.stringify(subscribeMsg));
-        console.log('[DanmakuChat] Subscribing to', count, 'events');
+        console.log('[DanmakuChat] Subscribing to', events.length, 'events');
     } catch(err) {
         console.error('[DanmakuChat] Subscribe failed:', err.message);
     }
