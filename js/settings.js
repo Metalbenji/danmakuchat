@@ -857,6 +857,33 @@
     });
   }
 
+  // ─── Scale Preview to Fit Container ─────────
+  // Uses transform:scale() so iframes render at their native resolution
+  // (matching OBS exactly) while being visually scaled to fit the panel.
+  function scalePreview() {
+    var previewContainer = document.getElementById('preview-container');
+    if (!previewContainer) return;
+    var scaleWrapper = previewContainer.querySelector('.preview-scale-wrapper');
+    if (!scaleWrapper) return;
+
+    var rect = previewContainer.getBoundingClientRect();
+    var availW = rect.width - 32; // padding
+    var availH = rect.height - 32;
+    if (availW <= 0 || availH <= 0) return;
+
+    // Read the native resolution from the data attributes
+    var nativeW = parseInt(scaleWrapper.getAttribute('data-native-w')) || 1280;
+    var nativeH = parseInt(scaleWrapper.getAttribute('data-native-h')) || 720;
+
+    var scale = Math.min(availW / nativeW, availH / nativeH, 1);
+    var displayW = Math.round(nativeW * scale);
+    var displayH = Math.round(nativeH * scale);
+
+    scaleWrapper.style.transform = 'scale(' + scale + ')';
+    scaleWrapper.style.width = displayW + 'px';
+    scaleWrapper.style.height = displayH + 'px';
+  }
+
   // ─── Refresh Preview ───────────────────────
   function refreshPreview() {
     var previewContainer = document.getElementById('preview-container');
@@ -875,30 +902,31 @@
     var layers = isAll ? ['back', 'middle', 'front'] : [layer];
     var newSrcKey = layers.map(function(l) { return generateURL(l, true); }).join('|');
     if (newSrcKey === lastPreviewSrc) {
-      // Just resize existing iframes
-      var frames = previewContainer.querySelectorAll('.preview-iframe');
-      frames.forEach(function(f) { f.style.width = w + 'px'; f.style.height = h + 'px'; });
+      // Just re-scale existing preview
+      scalePreview();
       return;
     }
     lastPreviewSrc = newSrcKey;
 
-    // Remove existing preview iframes
-    var oldFrames = previewContainer.querySelectorAll('.preview-iframe');
-    oldFrames.forEach(function(f) { f.remove(); });
+    // Remove existing preview elements
+    var oldScaleWrapper = previewContainer.querySelector('.preview-scale-wrapper');
+    if (oldScaleWrapper) oldScaleWrapper.remove();
 
-    // Remove old wrapper if exists
-    var oldWrapper = previewContainer.querySelector('.preview-stack');
-    if (oldWrapper) oldWrapper.remove();
+    // Create a scale wrapper that holds the content at native resolution
+    var scaleWrapper = document.createElement('div');
+    scaleWrapper.className = 'preview-scale-wrapper';
+    scaleWrapper.setAttribute('data-native-w', w);
+    scaleWrapper.setAttribute('data-native-h', h);
+    scaleWrapper.style.width = w + 'px';
+    scaleWrapper.style.height = h + 'px';
+    scaleWrapper.style.position = 'relative';
+    scaleWrapper.style.overflow = 'hidden';
+    scaleWrapper.style.borderRadius = 'var(--radius)';
+    scaleWrapper.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)';
+    scaleWrapper.style.border = '1px solid var(--border)';
 
     if (isAll) {
       // All-layers mode: stack 3 iframes on top of each other
-      var wrapper = document.createElement('div');
-      wrapper.className = 'preview-stack';
-      wrapper.style.position = 'relative';
-      wrapper.style.width = w + 'px';
-      wrapper.style.height = h + 'px';
-
-      // Layer order: back (bottom) → middle → front (top)
       var layerOrder = ['back', 'middle', 'front'];
       layerOrder.forEach(function(l, i) {
         var iframe = document.createElement('iframe');
@@ -907,33 +935,35 @@
         iframe.src = generateURL(l, true);
         iframe.allowTransparency = 'true';
         iframe.allow = 'autoplay';
+        // Use HTML attributes for intrinsic size (matches OBS viewport)
+        iframe.setAttribute('width', w);
+        iframe.setAttribute('height', h);
         iframe.style.position = 'absolute';
         iframe.style.top = '0';
         iframe.style.left = '0';
-        iframe.style.width = w + 'px';
-        iframe.style.height = h + 'px';
-        iframe.style.border = i === 2 ? '1px solid var(--border)' : 'none';
-        iframe.style.borderRadius = 'var(--radius)';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '0';
         iframe.style.zIndex = i + 1;
         iframe.style.background = i === 0 ? '#000' : 'transparent';
-        iframe.style.boxShadow = i === 2 ? '0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)' : 'none';
-        iframe.style.transition = 'width 0.3s ease, height 0.3s ease';
-        wrapper.appendChild(iframe);
+        scaleWrapper.appendChild(iframe);
       });
-
-      previewContainer.appendChild(wrapper);
     } else {
-      // Single-layer mode: one iframe (keep id for backwards compat)
+      // Single-layer mode: one iframe
       var iframe = document.createElement('iframe');
       iframe.id = 'preview-frame';
       iframe.className = 'preview-iframe';
       iframe.src = generateURL(layer, true);
       iframe.allowTransparency = 'true';
       iframe.allow = 'autoplay';
-      iframe.style.width = w + 'px';
-      iframe.style.height = h + 'px';
-      previewContainer.appendChild(iframe);
+      // Use HTML attributes for intrinsic size (matches OBS viewport)
+      iframe.setAttribute('width', w);
+      iframe.setAttribute('height', h);
+      scaleWrapper.appendChild(iframe);
     }
+
+    previewContainer.appendChild(scaleWrapper);
+    // Scale after appending so getBoundingClientRect works
+    requestAnimationFrame(function() { scalePreview(); });
   }
 
   // ─── Load Settings from URL ────────────────
@@ -1391,6 +1421,13 @@
       });
     });
     iframeObserver.observe(previewContainer, { childList: true, subtree: true });
+
+    // Re-scale preview on window resize
+    var resizeTimer;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(scalePreview, 100);
+    });
 
     // Initial preview
     updateLayerIndicators();
