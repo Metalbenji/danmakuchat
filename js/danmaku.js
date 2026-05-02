@@ -45,11 +45,12 @@ const CFG = {
     borderRadius: Number(getURLParam("borderRadius", 5)),
     elementGap: Number(getURLParam("elementGap", 5)),
     // Depth & Layers
-    frontChance: Number(getURLParam("frontChance", 0.05)),
-    backChance: Number(getURLParam("backChance", 0.4)),
-    depthEffect: getURLParam("depthEffect", false),
-    depthMinScale: Number(getURLParam("depthMinScale", 0.45)),
-    depthMaxScale: Number(getURLParam("depthMaxScale", 1.3)),
+    frontChance: Number(getURLParam("frontChance", 0.2)),
+    backChance: Number(getURLParam("backChance", 0.3)),
+    eventMiddleChance: Number(getURLParam("eventMiddleChance", 0.3)),
+    depthEffect: getURLParam("depthEffect", true),
+    depthMinScale: Number(getURLParam("depthMinScale", 0.2)),
+    depthMaxScale: Number(getURLParam("depthMaxScale", 1.5)),
     depthMinOpacity: Number(getURLParam("depthMinOpacity", 0.3)),
     depthMaxOpacity: Number(getURLParam("depthMaxOpacity", 1.0)),
     backLayerBlur: Number(getURLParam("backLayerBlur", 1)),
@@ -224,9 +225,15 @@ function _getAssignedLayer(username, text) {
 }
 
 function shouldShowMessage(type, data) {
-    // Events only show on front layer
     if (type === 'event') {
-        return CFG.LAYER === 'front';
+        // Events route to front or middle (never back), based on hash
+        var username = (data && (data.username || data.user || '')) || '';
+        var text = (data && (data.text || data.message || '')) || '';
+        var seed = 'evt:' + username + '|' + text + '|' + Date.now();
+        var r = _hashStr(seed);
+        // eventMiddleChance = chance of going to middle; rest go to front
+        var assignedLayer = r < CFG.eventMiddleChance ? 'middle' : 'front';
+        return CFG.LAYER === assignedLayer;
     }
     // Chat: deterministically route to a layer
     var username = (data && (data.username || data.user || '')) || '';
@@ -460,6 +467,14 @@ function spawnDanmaku(el, isEvent) {
     if (isEvent && CFG.eventDurationBonus > 0) {
         baseDuration += CFG.eventDurationBonus;
     }
+
+    // Layer speed multiplier: front is fastest, back is slowest (parallax depth)
+    // Front = 0.7x (faster), Middle = 1.0x (normal), Back = 1.4x (slower)
+    var layerSpeedMult = 1.0;
+    if (CFG.LAYER === 'front') layerSpeedMult = 0.7;
+    else if (CFG.LAYER === 'back') layerSpeedMult = 1.4;
+    baseDuration = baseDuration * layerSpeedMult;
+    baseDuration = Math.max(2, baseDuration);
 
     var isRight = CFG.direction === 'right';
 
