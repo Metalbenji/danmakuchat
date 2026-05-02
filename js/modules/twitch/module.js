@@ -159,13 +159,26 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
         return profileImageUrl;
     }
 
-    // Streamer.bot doesn't always include avatar URLs. Use decapi.me which
-    // returns a 302 redirect to the actual Twitch CDN avatar image.
-    // Works as a plain <img src> — no fetch/CORS issues, even from file://.
-    // Free, no API key needed.
-    var avatarUrl = 'https://decapi.me/twitch/avatar/' + encodeURIComponent(login);
-    twitchAvatars.set(login, avatarUrl);
-    return avatarUrl;
+    // Streamer.bot doesn't always include avatar URLs.
+    // Fetch from decapi.me which returns the actual Twitch CDN URL as text.
+    // Has CORS headers (Access-Control-Allow-Origin: *) so works from file://.
+    try {
+        var resp = await fetch('https://decapi.me/twitch/avatar/' + encodeURIComponent(login));
+        if (resp.ok) {
+            var avatarUrl = (await resp.text()).trim();
+            if (avatarUrl && avatarUrl.indexOf('http') === 0) {
+                twitchAvatars.set(login, avatarUrl);
+                return avatarUrl;
+            }
+        }
+    } catch(err) {
+        // Fetch failed (offline, etc.) — fall through to placeholder
+    }
+
+    // Final fallback: generated SVG placeholder
+    var fallback = generateAvatarUrl(login, color);
+    twitchAvatars.set(login, fallback);
+    return fallback;
 }
 
 async function getTwitchMessageFromParts(parts) {
