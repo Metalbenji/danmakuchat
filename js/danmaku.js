@@ -186,7 +186,7 @@ function getAvailableLane(duration, elHeight) {
         var laneData = lanes.get(lane);
         if (!laneData || laneData.endTime <= now) {
             lanes.set(lane, { endTime: now + (duration * 0.3) * 1000 });
-            return lane;
+            return { index: lane, step: safeStep };
         }
     }
 
@@ -200,7 +200,7 @@ function getAvailableLane(duration, elHeight) {
         }
     }
     lanes.set(soonestLane, { endTime: now + (duration * 0.3) * 1000 });
-    return soonestLane;
+    return { index: soonestLane, step: safeStep };
 }
 
 // ---- Layer Routing ----
@@ -473,9 +473,9 @@ function spawnDanmaku(el, isEvent) {
     var containerHeight = window.innerHeight;
 
     // Get a lane that fits within the viewport
-    var lane = getAvailableLane(baseDuration, elHeight);
+    var laneInfo = getAvailableLane(baseDuration, elHeight);
     var maxTop = Math.max(0, containerHeight - elHeight);
-    var laneTop = Math.min(lane * CFG.danmakuDensity, maxTop);
+    var laneTop = Math.min(laneInfo.index * laneInfo.step, maxTop);
 
     // Position element at the starting edge
     el.style.top = laneTop + 'px';

@@ -282,15 +282,14 @@ html, body {
 
 /* ---- Event Style: Solid (default) ---- */
 .danmaku-item.event.event-style-solid {
-    background: linear-gradient(135deg, rgba(128, 0, 255, 0.85), rgba(255, 0, 128, 0.85));
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(128, 0, 255, 0.4), rgba(255, 0, 128, 0.4));
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* ---- Event Style: Glass ---- */
 .danmaku-item.event.event-style-glass {
-    background: rgba(255, 255, 255, 0.06);
-    /* backdrop-filter removed — too expensive in OBS CEF */
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .danmaku-item.event.event-style-glass .danmaku-username {
@@ -324,7 +323,7 @@ html, body {
 
 /* ---- Event Glow ---- */
 .event-glow .danmaku-item.event.event-style-solid {
-    box-shadow: 0 0 12px rgba(128, 0, 255, 0.15);
+    box-shadow: 0 0 12px rgba(128, 0, 255, 0.2);
 }
 
 .event-glow .danmaku-item.event.event-style-glass {
