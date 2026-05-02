@@ -77,7 +77,7 @@ const CFG = {
     // Subscriber Images
     subscriberImages: getURLParam("subscriberImages", false),
     subscriberImagesOnlySubs: getURLParam("subscriberImagesOnlySubs", true),
-    subscriberImageMaxHeight: Number(getURLParam("subscriberImageMaxHeight", 60)),
+    subscriberImageMaxHeight: Number(getURLParam("subscriberImageMaxHeight", 120)),
 };
 
 const ignoreUserList = (CFG.ignoreChatters || '').split(',').map(item => item.trim().toLowerCase()).filter(Boolean) || [];

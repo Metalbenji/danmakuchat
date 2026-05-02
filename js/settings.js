@@ -79,7 +79,7 @@
     // Subscriber Images
     subscriberImages: false,
     subscriberImagesOnlySubs: true,
-    subscriberImageMaxHeight: 60,
+    subscriberImageMaxHeight: 120,
     // Platforms
     showTwitch: true,
     showTwitchMessages: true,
@@ -296,7 +296,7 @@
         settings: [
           { key: 'subscriberImages', label: 'Enable Image Embedding', type: 'toggle' },
           { key: 'subscriberImagesOnlySubs', label: 'Subscribers Only', type: 'toggle' },
-          { key: 'subscriberImageMaxHeight', label: 'Max Image Height', type: 'range', min: 20, max: 150, step: 5, unit: 'px' },
+          { key: 'subscriberImageMaxHeight', label: 'Max Image Height', type: 'range', min: 20, max: 300, step: 5, unit: 'px' },
         ],
       },
       {
