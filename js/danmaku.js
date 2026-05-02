@@ -58,7 +58,7 @@ const CFG = {
     // Event Messages
     eventStyle: getURLParam("eventStyle", "solid"),
     eventOpacity: Number(getURLParam("eventOpacity", 1)),
-    eventFontSize: getURLParam("eventFontSize", "larger"),
+    eventFontSize: getURLParam("eventFontSize", "much-larger"),
     eventDurationBonus: Number(getURLParam("eventDurationBonus", 2)),
     eventPaddingX: Number(getURLParam("eventPaddingX", 28)),
     eventPaddingY: Number(getURLParam("eventPaddingY", 8)),

@@ -23,15 +23,15 @@
     use24h: false,
     direction: 'left',
     // Appearance - Speed & Density
-    danmakuSpeed: 14,
-    speedRandomness: 2,
+    danmakuSpeed: 15,
+    speedRandomness: 3,
     danmakuDensity: 28,
     maxDanmaku: 80,
     // Appearance - Message Style
     chatBg: 'none',
     chatBorder: 'none',
     danmakuOpacity: 1,
-    textShadow: 'medium',
+    textShadow: 'heavy',
     // Appearance - Badges & Avatars
     showBadges: true,
     showAvatar: true,
@@ -47,11 +47,11 @@
     elementGap: 5,
     // Depth & Layers
     layer: 'all',
-    frontChance: 0.05,
-    backChance: 0.4,
+    frontChance: 0.2,
+    backChance: 0.3,
     depthEffect: true,
-    depthMinScale: 0.45,
-    depthMaxScale: 1.3,
+    depthMinScale: 0.2,
+    depthMaxScale: 1.5,
     depthMinOpacity: 0.3,
     depthMaxOpacity: 1.0,
     backLayerBlur: 1,
@@ -60,7 +60,7 @@
     // Event Messages
     eventStyle: 'solid',
     eventOpacity: 1,
-    eventFontSize: 'larger',
+    eventFontSize: 'much-larger',
     eventDurationBonus: 2,
     eventPaddingX: 28,
     eventPaddingY: 8,
@@ -104,7 +104,7 @@
     showKickRaids: true,
     showKickGifts: true,
     showKickGiftedSubsUserTrain: true,
-    showTiktok: true,
+    showTiktok: false,
     showTikTokMessages: true,
     showTikTokFollows: true,
     showTikTokGifts: true,
@@ -1353,15 +1353,16 @@
 
     // Copy layer URL buttons (Front / Middle / Back)
     document.querySelectorAll('.btn-copy-layer').forEach(function (btn) {
+      var origHTML = btn.innerHTML;
       btn.addEventListener('click', function () {
         var layer = btn.getAttribute('data-layer');
         var url = generateURL(layer, false);
-        var origHTML = btn.innerHTML;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> <span class="btn-text">Copied!</span>';
         navigator.clipboard.writeText(url).then(function () {
-          btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> <span class="btn-text">Copied!</span>';
           setTimeout(function () { btn.innerHTML = origHTML; }, 2000);
         }).catch(function () {
           prompt('Copy this URL:', url);
+          btn.innerHTML = origHTML;
         });
       });
     });
