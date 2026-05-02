@@ -1201,9 +1201,9 @@
       'local obs = obslua\n' +
       '\n' +
       'local LAYERS = {\n' +
-      '  { name = "Danmaku Back",    url = "' + escLua(backUrl) + '" },\n' +
-      '  { name = "Danmaku Middle",  url = "' + escLua(middleUrl) + '" },\n' +
-      '  { name = "Danmaku Front",   url = "' + escLua(frontUrl) + '" },\n' +
+      '  { scene = "Danmaku Back",    source = "Danmaku Back",    url = "' + escLua(backUrl) + '" },\n' +
+      '  { scene = "Danmaku Middle",  source = "Danmaku Middle",  url = "' + escLua(middleUrl) + '" },\n' +
+      '  { scene = "Danmaku Front",   source = "Danmaku Front",   url = "' + escLua(frontUrl) + '" },\n' +
       '}\n' +
       '\n' +
       'function script_description()\n' +
@@ -1219,14 +1219,14 @@
       'function script_load(settings)\n' +
       '  for _, layer in ipairs(LAYERS) do\n' +
       '    -- Create the scene\n' +
-      '    local scene = obs.obs_scene_create(layer.name)\n' +
+      '    local scene = obs.obs_scene_create(layer.scene)\n' +
       '    if scene == nil then\n' +
       '      -- Scene already exists, get a reference to it\n' +
-      '      scene = obs.obs_get_scene_by_name(layer.name)\n' +
+      '      scene = obs.obs_get_scene_by_name(layer.scene)\n' +
       '    end\n' +
       '    if scene ~= nil then\n' +
       '      -- Remove existing Danmaku source if present (allow re-run)\n' +
-      '      local existing = obs.obs_scene_find_source(scene, "Danmaku Overlay")\n' +
+      '      local existing = obs.obs_scene_find_source(scene, layer.source)\n' +
       '      if existing ~= nil then\n' +
       '        obs.obs_sceneitem_remove(existing)\n' +
       '      end\n' +
@@ -1241,7 +1241,7 @@
       '      obs.obs_data_set_bool(source_settings, "css", false)\n' +
       '\n' +
       '      -- Create the browser source\n' +
-      '      local source = obs.obs_source_create("Danmaku Overlay", "browser_source", source_settings, nil)\n' +
+      '      local source = obs.obs_source_create(layer.source, "browser_source", source_settings, nil)\n' +
       '      obs.obs_data_release(source_settings)\n' +
       '\n' +
       '      if source ~= nil then\n' +
