@@ -154,19 +154,18 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
     if (twitchAvatars.has(login)) return twitchAvatars.get(login);
 
     // Prefer Streamer.bot's provided profileImageUrl (from event data).
-    // This URL points to Twitch CDN (static-cdn.jtvnw.net) which loads fine
-    // even from file:// via <img> tags — no CORS issue with images.
-    // Streamer.bot already fetches this from the Twitch API, so no extra
-    // round-trip needed.
     if (profileImageUrl && profileImageUrl.indexOf('http') === 0) {
         twitchAvatars.set(login, profileImageUrl);
         return profileImageUrl;
     }
 
-    // Fallback: generate a deterministic SVG avatar (gradient + silhouette).
-    var fallback = generateAvatarUrl(login, color);
-    twitchAvatars.set(login, fallback);
-    return fallback;
+    // Streamer.bot doesn't always include avatar URLs. Use decapi.me which
+    // returns a 302 redirect to the actual Twitch CDN avatar image.
+    // Works as a plain <img src> — no fetch/CORS issues, even from file://.
+    // Free, no API key needed.
+    var avatarUrl = 'https://decapi.me/twitch/avatar/' + encodeURIComponent(login);
+    twitchAvatars.set(login, avatarUrl);
+    return avatarUrl;
 }
 
 async function getTwitchMessageFromParts(parts) {
