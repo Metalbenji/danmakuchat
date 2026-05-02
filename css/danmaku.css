@@ -62,12 +62,14 @@ html, body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     opacity: var(--dm-opacity, 1);
+    /* GPU layer promotion for smooth scrolling — only on the animated property */
     will-change: transform;
-    /* Promote each item to its own GPU layer for smooth scrolling */
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     /* Isolate layout so items don't affect each other during animation */
     contain: layout style paint;
+    /* Prevent images loading mid-scroll from causing reflow jitter */
+    overflow: hidden;
 }
 
 /* ============================================ */
@@ -269,8 +271,10 @@ html, body {
 }
 
 /* ---- Subscriber Embedded Images ---- */
+/* No box-shadow on scrolling images — shadow rasterization on every frame
+   causes repaints in OBS CEF and is the #1 cause of jerkiness. */
 .danmaku-item .danmaku-message img.danmaku-embed-image {
-    max-height: var(--dm-embed-image-max-h, 60px);
+    max-height: var(--dm-embed-image-max-h, 120px);
     height: auto;
     width: auto;
     vertical-align: middle;
@@ -278,7 +282,6 @@ html, body {
     object-fit: contain;
     display: inline-block;
     margin: 0 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================ */

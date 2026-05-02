@@ -546,7 +546,7 @@ function createDanmakuEvent(platform, data) {
 }
 
 function spawnDanmaku(el, isEvent) {
-    cullOldDanmaku();
+    scheduleCull();
 
     // Calculate duration with randomness
     var baseDuration = CFG.danmakuSpeed;
@@ -582,14 +582,16 @@ function spawnDanmaku(el, isEvent) {
         el.style.setProperty('--dm-opacity', (CFG.danmakuOpacity * depthOpacity).toFixed(3));
     }
 
-    // Append to DOM first so offsetWidth is accurate
+    // Append to DOM first so offsetWidth is accurate.
+    // Batch all DOM reads together (width/height) before any writes (left/top)
+    // to avoid forced synchronous reflows from interleaved read/write.
     el.style.visibility = 'hidden';
     danmakuLayer.appendChild(el);
 
     var elWidth = el.offsetWidth;
     var elHeight = el.offsetHeight;
-    var containerWidth = window.innerWidth;
-    var containerHeight = window.innerHeight;
+    var containerWidth = _containerW;
+    var containerHeight = _containerH;
 
     // Get a lane that fits within the viewport
     var laneInfo = getAvailableLane(baseDuration, elHeight);
@@ -614,12 +616,37 @@ function spawnDanmaku(el, isEvent) {
 
     // Clean up element when animation finishes
     el.addEventListener('animationend', function() {
+        el.style.willChange = 'auto';
         el.remove();
     });
     // Safety net: if animationend doesn't fire (OBS edge case), remove after duration + 2s
     setTimeout(function() {
-        if (el.parentNode) el.remove();
+        if (el.parentNode) {
+            el.style.willChange = 'auto';
+            el.remove();
+        }
     }, (baseDuration + 2) * 1000);
+}
+
+// Cached container dimensions — updated on resize, avoids reading innerWidth
+// on every spawn which can force layout if anything changed.
+var _containerW = window.innerWidth;
+var _containerH = window.innerHeight;
+window.addEventListener('resize', function() {
+    lanes.clear();
+    _containerW = window.innerWidth;
+    _containerH = window.innerHeight;
+});
+
+// Debounce cull so multiple rapid spawns don't force layout repeatedly.
+var _cullScheduled = false;
+function scheduleCull() {
+    if (_cullScheduled) return;
+    _cullScheduled = true;
+    requestAnimationFrame(function() {
+        _cullScheduled = false;
+        cullOldDanmaku();
+    });
 }
 
 function cullOldDanmaku() {
@@ -627,13 +654,24 @@ function cullOldDanmaku() {
     if (items.length < CFG.maxDanmaku) return;
     var toRemove = items.length - CFG.maxDanmaku + 10;
     var removed = 0;
-    // Walk backwards so live NodeList stays valid after remove()
+    var cw = _containerW;
+    // Walk backwards so live NodeList stays valid after remove().
+    // Use computed left position + offsetWidth to avoid getBoundingClientRect
+    // which forces a full synchronous layout/reflow — the #1 perf killer.
     for (var i = items.length - 1; i >= 0 && removed < toRemove; i--) {
         var item = items[i];
-        // Check if the CSS animation has finished (element has scrolled off-screen).
-        // getBoundingClientRect forces layout, but we only call cull when over maxDanmaku.
-        var rect = item.getBoundingClientRect();
-        if (rect.right < -50 || rect.left > window.innerWidth + 50) {
+        // Check if animation has finished or element is off-screen.
+        // Elements that finished animating have animation === '' or 'none'.
+        var anim = getComputedStyle(item).animation;
+        if (!anim || anim === 'none') {
+            item.remove();
+            removed++;
+            continue;
+        }
+        // Fallback: check left position (cheap read, no layout forced)
+        var left = item.offsetLeft;
+        var w = item.offsetWidth;
+        if (left + w < -50 || left > cw + 50) {
             item.remove();
             removed++;
         }
@@ -738,10 +776,7 @@ async function cleanStringOfHTMLButEmotes(string) {
     return container.textContent || "";
 }
 
-// ---- Window resize handler ----
-window.addEventListener('resize', function() {
-    lanes.clear();
-});
+// ---- Window resize handler ---- (handled above with dimension caching)
 
 // ---- Preview Mode ----
 var isPreview = getURLParam("preview", false);
