@@ -35,6 +35,13 @@ if (showKick) {
 
 async function setupKickWebSocket() {
     try {
+        // Skip HTTP fetch from file:// — CORS blocks it anyway.
+        // Kick chat still works via Streamer.bot WebSocket events.
+        if (window.location.protocol === 'file:') {
+            console.log('[Kick] Skipping direct WebSocket (file:// mode, using Streamer.bot events)');
+            return;
+        }
+
         const streamerInfo = await getStreamerInfo();
         const chatroom = streamerInfo?.platforms?.kick?.chatroom;
         if (!chatroom) {
