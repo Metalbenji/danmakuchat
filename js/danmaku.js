@@ -454,11 +454,13 @@ function spawnDanmaku(el, isEvent) {
     var isRight = CFG.direction === 'right';
 
     // Depth effect: random zoom/opacity for chat messages on middle layer
-    // Only applies when depthEffect is enabled AND using multiple layers
+    // Only applies when depthEffect is enabled AND using multiple layers.
+    // Uses CSS custom property --dm-depth-scale so it composites with the
+    // @keyframes translate3d() instead of clashing with it.
     if (CFG.depthEffect && !isEvent && CFG.LAYER === 'middle') {
-        var depthScale = 0.85 + Math.random() * 0.3; // 0.85–1.15 (subtle range)
-        var depthOpacity = 0.7 + Math.random() * 0.3;  // 0.7–1.0
-        el.style.transform = 'scale(' + depthScale.toFixed(3) + ')';
+        var depthScale = CFG.depthMinScale + Math.random() * (CFG.depthMaxScale - CFG.depthMinScale);
+        var depthOpacity = CFG.depthMinOpacity + Math.random() * (CFG.depthMaxOpacity - CFG.depthMinOpacity);
+        el.style.setProperty('--dm-depth-scale', depthScale.toFixed(3));
         el.style.opacity = depthOpacity.toFixed(3);
     }
 
@@ -503,16 +505,18 @@ function spawnDanmaku(el, isEvent) {
 }
 
 function cullOldDanmaku() {
-    var items = danmakuLayer.querySelectorAll('.danmaku-item');
+    var items = danmakuLayer.children;
     if (items.length < CFG.maxDanmaku) return;
-    var containerRect = danmakuLayer.getBoundingClientRect();
     var toRemove = items.length - CFG.maxDanmaku + 10;
     var removed = 0;
-    for (var i = 0; i < items.length && removed < toRemove; i++) {
-        var rect = items[i].getBoundingClientRect();
-        // Only cull if fully off-screen (with 50px buffer)
-        if (rect.right < containerRect.left - 50 || rect.left > containerRect.right + 50) {
-            items[i].remove();
+    // Walk backwards so live NodeList stays valid after remove()
+    for (var i = items.length - 1; i >= 0 && removed < toRemove; i--) {
+        var item = items[i];
+        // Check if the CSS animation has finished (element has scrolled off-screen).
+        // getBoundingClientRect forces layout, but we only call cull when over maxDanmaku.
+        var rect = item.getBoundingClientRect();
+        if (rect.right < -50 || rect.left > window.innerWidth + 50) {
+            item.remove();
             removed++;
         }
     }

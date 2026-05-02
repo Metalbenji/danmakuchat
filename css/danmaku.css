@@ -26,6 +26,8 @@ html, body {
     height: 100%;
     overflow: visible;
     pointer-events: none;
+    /* Promote to its own compositor layer when blur is applied */
+    will-change: filter, opacity;
 }
 
 /* ---- Layer variants ---- */
@@ -33,6 +35,8 @@ html, body {
 #danmaku-layer.layer-back {
     filter: blur(var(--dm-back-blur, 1.5px));
     opacity: var(--dm-back-opacity, 0.7);
+    /* Force GPU layer promotion for blur compositing */
+    transform: translate3d(0, 0, 0);
 }
 
 #danmaku-layer.layer-middle {
@@ -59,8 +63,11 @@ html, body {
     -moz-osx-font-smoothing: grayscale;
     opacity: var(--dm-opacity, 1);
     will-change: transform;
-    /* Animation is driven by JS (requestAnimationFrame) via transform: translateX() */
-    animation: none;
+    /* Promote each item to its own GPU layer for smooth scrolling */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* Isolate layout so items don't affect each other during animation */
+    contain: layout style paint;
 }
 
 /* ============================================ */
@@ -77,15 +84,14 @@ html, body {
 .danmaku-item.chat,
 .danmaku-item.chat.bg-dark {
     background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    /* backdrop-filter removed from default — extremely expensive in OBS CEF.
+       Use bg-light for a subtle variant or enable .bg-blur manually if needed. */
 }
 
 /* Light glass */
 .danmaku-item.chat.bg-light {
     background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    /* backdrop-filter removed — too expensive in OBS CEF */
 }
 
 .danmaku-item.chat.bg-light .danmaku-username {
@@ -113,8 +119,13 @@ html, body {
 /* No background */
 .danmaku-item.chat.bg-none {
     background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+}
+
+/* Optional: re-enable backdrop blur if user explicitly wants it (performance cost) */
+.danmaku-item.chat.bg-blur {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 /* ---- Chat Border Variants ---- */
@@ -272,16 +283,14 @@ html, body {
 /* ---- Event Style: Solid (default) ---- */
 .danmaku-item.event.event-style-solid {
     background: linear-gradient(135deg, rgba(128, 0, 255, 0.3), rgba(255, 0, 128, 0.3));
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    /* backdrop-filter removed — too expensive in OBS CEF */
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* ---- Event Style: Glass ---- */
 .danmaku-item.event.event-style-glass {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* backdrop-filter removed — too expensive in OBS CEF */
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -409,22 +418,24 @@ html, body {
 /* ============================================ */
 
 /* Right to Left (default) */
+/* Uses translate3d for explicit GPU compositing.
+   --dm-depth-scale allows depth effect to scale without conflicting with translateX. */
 @keyframes danmaku-scroll {
     from {
-        transform: translateX(0);
+        transform: translate3d(0, 0, 0) scale(var(--dm-depth-scale, 1));
     }
     to {
-        transform: translateX(calc(-100% - 100vw - 100px));
+        transform: translate3d(calc(-100% - 100vw - 100px), 0, 0) scale(var(--dm-depth-scale, 1));
     }
 }
 
 /* Left to Right */
 @keyframes danmaku-scroll-right {
     from {
-        transform: translateX(0);
+        transform: translate3d(0, 0, 0) scale(var(--dm-depth-scale, 1));
     }
     to {
-        transform: translateX(calc(100% + 100vw + 100px));
+        transform: translate3d(calc(100% + 100vw + 100px), 0, 0) scale(var(--dm-depth-scale, 1));
     }
 }
 
