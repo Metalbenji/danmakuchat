@@ -1241,7 +1241,7 @@
       '      obs.obs_data_set_bool(source_settings, "css", false)\n' +
       '\n' +
       '      -- Create the browser source\n' +
-      '      local source = obs.obs_source_create(layer.source, "browser_source", source_settings, nil)\n' +
+      '      local source = obs.obs_source_create("browser_source", layer.source, source_settings, nil)\n' +
       '      obs.obs_data_release(source_settings)\n' +
       '\n' +
       '      if source ~= nil then\n' +
