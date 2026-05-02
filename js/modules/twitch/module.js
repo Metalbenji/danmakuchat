@@ -42,7 +42,7 @@ function _twitchUser(data) {
             color:      data.message.color,
             badges:     data.message.badges,
             id:         data.message.userId || data.message.userID,
-            profileImageUrl: data.message.profileImageUrl || '',
+            profileImageUrl: data.message.profileImageUrl || data.message.profile_image_url || '',
         };
     }
     // Other events: data.user (nested object)
@@ -54,7 +54,7 @@ function _twitchUser(data) {
             color:      data.user.color,
             badges:     data.user.badges,
             id:         data.user.id || data.user.userId,
-            profileImageUrl: data.user.profileImageUrl || '',
+            profileImageUrl: data.user.profileImageUrl || data.user.profile_image_url || '',
         };
     }
     // Flat fields (Follow, Raid, RewardRedemption, etc.)
@@ -66,7 +66,7 @@ function _twitchUser(data) {
             color:      data.color,
             badges:     data.badges,
             id:         data.user_id,
-            profileImageUrl: data.profileImageUrl || data.user_profileImageUrl || '',
+            profileImageUrl: data.profileImageUrl || data.profile_image_url || data.user_profileImageUrl || '',
         };
     }
     return null;
@@ -212,6 +212,13 @@ async function twitchChatMessage(data) {
     if (text.startsWith('!') && ignoreCommands === true) return;
 
     try {
+        // Debug: log what Streamer.bot sends so we can verify avatar fields
+        console.debug('[Twitch] ChatMessage user data:', {
+            login: userLogin,
+            profileImageUrl: user.profileImageUrl,
+            rawMsgFields: data.message ? Object.keys(data.message).filter(k => k.toLowerCase().includes('profile') || k.toLowerCase().includes('avatar') || k.toLowerCase().includes('image')) : []
+        });
+
         var avatarImage = await getTwitchAvatar(userLogin, user.color, user.profileImageUrl);
         var badgeList = await getTwitchBadges(user.badges);
         var messageFromParts = await getTwitchMessageFromParts(data.parts);
