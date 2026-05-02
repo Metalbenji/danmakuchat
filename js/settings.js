@@ -448,9 +448,6 @@
         if (s.type !== 'subsection') bindSetting(s, sectionEl);
       });
     });
-
-    // Add Layer URLs at the very bottom
-    renderLayerURLs(container);
   }
 
   // ─── Build Setting HTML ─────────────────────
@@ -751,7 +748,7 @@
       '<div class="section-body">' +
         '<div class="obs-steps">' +
           '<div class="step"><div class="step-num">1</div><div class="step-content"><h4>Add 3 Browser Sources</h4><p>In OBS, add <strong>3 Browser Sources</strong> (one for each layer: Front, Middle, Back). Name them "Danmaku Front", "Danmaku Middle", "Danmaku Back".</p></div></div>' +
-          '<div class="step"><div class="step-num">2</div><div class="step-content"><h4>Set the URLs</h4><p>Copy the layer URLs from below. The <strong>Front</strong> layer goes on top, <strong>Middle</strong> in the middle, <strong>Back</strong> at the bottom of your source list.</p></div></div>' +
+          '<div class="step"><div class="step-num">2</div><div class="step-content"><h4>Set the URLs</h4><p>Use the <strong>Front / Middle / Back</strong> copy buttons at the top of this page. The <strong>Front</strong> layer goes on top, <strong>Middle</strong> in the middle, <strong>Back</strong> at the bottom of your source list.</p></div></div>' +
           '<div class="step"><div class="step-num">3</div><div class="step-content"><h4>Custom Size</h4><p>Set each browser source to the same dimensions (e.g., your full stream resolution). Set <strong>width</strong> and <strong>height</strong> in the browser source properties.</p></div></div>' +
           '<div class="step"><div class="step-num">4</div><div class="step-content"><h4>Transparent Background</h4><p>Make sure "Transparent background" is <strong>checked</strong> in each browser source so only the danmaku messages are visible over your stream.</p></div></div>' +
         '</div>' +
@@ -770,48 +767,6 @@
     });
   }
 
-  // ─── Render Layer URLs (Bottom) ────────────
-  function renderLayerURLs(container) {
-    var div = document.createElement('div');
-    div.className = 'url-boxes';
-    div.innerHTML =
-      '<div class="url-boxes-title"><i class="fa-solid fa-link"></i> Layer URLs</div>' +
-      '<div class="url-box">' +
-        '<div class="url-box-label"><i class="fa-solid fa-arrow-up"></i> Front Layer URL</div>' +
-        '<code id="url-front"></code>' +
-        '<div class="copy-hint">Click to copy</div>' +
-      '</div>' +
-      '<div class="url-box">' +
-        '<div class="url-box-label"><i class="fa-solid fa-minus"></i> Middle Layer URL</div>' +
-        '<code id="url-middle"></code>' +
-        '<div class="copy-hint">Click to copy</div>' +
-      '</div>' +
-      '<div class="url-box">' +
-        '<div class="url-box-label"><i class="fa-solid fa-arrow-down"></i> Back Layer URL</div>' +
-        '<code id="url-back"></code>' +
-        '<div class="copy-hint">Click to copy</div>' +
-      '</div>';
-
-    container.appendChild(div);
-
-    // Click to copy
-    div.querySelectorAll('code').forEach(function (code) {
-      code.addEventListener('click', function () {
-        navigator.clipboard.writeText(code.textContent).then(function () {
-          code.classList.add('copied');
-          setTimeout(function () { code.classList.remove('copied'); }, 600);
-        }).catch(function () {
-          // Fallback
-          var range = document.createRange();
-          range.selectNodeContents(code);
-          var sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-        });
-      });
-    });
-  }
-
   // ─── Config Change Handler ─────────────────
   function onConfigChange() {
     if (refreshTimeout) clearTimeout(refreshTimeout);
@@ -819,7 +774,6 @@
       // Force iframe reload by invalidating cache key
       lastPreviewSrc = '';
       refreshPreview();
-      updateLayerURLDisplay();
       updateLayerIndicators();
       updatePreviewStatus();
     }, 300);
@@ -886,17 +840,6 @@
 
     // Preview or file:// preview — use relative path
     return basePath + '?' + params.toString();
-  }
-
-  // ─── Update Layer URL Display ──────────────
-  function updateLayerURLDisplay() {
-    ['front', 'middle', 'back'].forEach(function (layer) {
-      var el = document.getElementById('url-' + layer);
-      if (el) {
-        var url = generateURL(layer, false);
-        el.textContent = url;
-      }
-    });
   }
 
   // ─── Update Layer Indicators ───────────────
@@ -1252,17 +1195,18 @@
       }
     });
 
-    // Copy OBS URL button
-    document.getElementById('btn-export').addEventListener('click', function () {
-      var url = generateURL('middle', false);
-      navigator.clipboard.writeText(url).then(function () {
-        var btn = document.getElementById('btn-export');
+    // Copy layer URL buttons (Front / Middle / Back)
+    document.querySelectorAll('.btn-copy-layer').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var layer = btn.getAttribute('data-layer');
+        var url = generateURL(layer, false);
         var origHTML = btn.innerHTML;
-        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> <span class="btn-text">Copied!</span>';
-        setTimeout(function () { btn.innerHTML = origHTML; }, 2000);
-      }).catch(function () {
-        // Fallback
-        prompt('Copy this URL:', url);
+        navigator.clipboard.writeText(url).then(function () {
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> <span class="btn-text">Copied!</span>';
+          setTimeout(function () { btn.innerHTML = origHTML; }, 2000);
+        }).catch(function () {
+          prompt('Copy this URL:', url);
+        });
       });
     });
 
@@ -1334,7 +1278,6 @@
     iframeObserver.observe(previewContainer, { childList: true, subtree: true });
 
     // Initial preview
-    updateLayerURLDisplay();
     updateLayerIndicators();
     updatePreviewStatus();
     refreshPreview();
