@@ -154,7 +154,7 @@
         title: 'General',
         icon: '⚙️',
         settings: [
-          { key: 'fontSize', label: 'Font Size', type: 'range', min: 0.5, max: 3, step: 0.1, unit: 'x' },
+          { key: 'fontSize', label: 'Font Size', type: 'range', min: 0.5, max: 5, step: 0.1, unit: 'x' },
           { key: 'chatFontFamily', label: 'Font Family', type: 'text', placeholder: 'DM Sans', wide: true },
           { key: 'fontWeight', label: 'Font Weight', type: 'select', options: [
             { value: 'normal', label: 'Normal' },

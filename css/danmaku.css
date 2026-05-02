@@ -282,9 +282,8 @@ html, body {
 
 /* ---- Event Style: Solid (default) ---- */
 .danmaku-item.event.event-style-solid {
-    background: linear-gradient(135deg, rgba(128, 0, 255, 0.15), rgba(255, 0, 128, 0.15));
-    /* backdrop-filter removed — too expensive in OBS CEF */
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, rgba(128, 0, 255, 0.85), rgba(255, 0, 128, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* ---- Event Style: Glass ---- */

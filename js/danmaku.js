@@ -83,10 +83,7 @@ root.setProperty('--dm-font-size', (16 * CFG.fontSize) + 'px');
 root.setProperty('--dm-event-font-size', getEventFontSize());
 root.setProperty('--dm-font-family', CFG.chatFontFamily + ', sans-serif');
 root.setProperty('--dm-font-weight', CFG.fontWeight);
-// Only set opacity when not default — opacity:1 even at full creates a compositing layer that dims text
-if (CFG.danmakuOpacity < 1) {
-    root.setProperty('--dm-opacity', CFG.danmakuOpacity);
-}
+root.setProperty('--dm-opacity', CFG.danmakuOpacity);
 root.setProperty('--dm-gap', CFG.elementGap + 'px');
 root.setProperty('--dm-padding-x', CFG.paddingX + 'px');
 root.setProperty('--dm-padding-y', CFG.paddingY + 'px');
@@ -457,11 +454,13 @@ function spawnDanmaku(el, isEvent) {
     // Only applies when depthEffect is enabled AND using multiple layers.
     // Uses CSS custom property --dm-depth-scale so it composites with the
     // @keyframes translate3d() instead of clashing with it.
+    // Opacity is multiplied with the user's opacity setting so the slider
+    // still has an effect when depth is active.
     if (CFG.depthEffect && !isEvent && CFG.LAYER === 'middle') {
         var depthScale = CFG.depthMinScale + Math.random() * (CFG.depthMaxScale - CFG.depthMinScale);
         var depthOpacity = CFG.depthMinOpacity + Math.random() * (CFG.depthMaxOpacity - CFG.depthMinOpacity);
         el.style.setProperty('--dm-depth-scale', depthScale.toFixed(3));
-        el.style.opacity = depthOpacity.toFixed(3);
+        el.style.setProperty('--dm-opacity', (CFG.danmakuOpacity * depthOpacity).toFixed(3));
     }
 
     // Append to DOM first so offsetWidth is accurate
