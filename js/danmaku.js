@@ -74,6 +74,10 @@ const CFG = {
     maxMsgLength: Number(getURLParam("maxMsgLength", 0)),
     spamProtection: Number(getURLParam("spamProtection", 0)),
     hideEmotes: getURLParam("hideEmotes", false),
+    // Subscriber Images
+    subscriberImages: getURLParam("subscriberImages", false),
+    subscriberImagesOnlySubs: getURLParam("subscriberImagesOnlySubs", true),
+    subscriberImageMaxHeight: Number(getURLParam("subscriberImageMaxHeight", 60)),
 };
 
 const ignoreUserList = (CFG.ignoreChatters || '').split(',').map(item => item.trim().toLowerCase()).filter(Boolean) || [];
@@ -94,6 +98,7 @@ root.setProperty('--dm-icon-size', effectiveIconSize + 'px');
 root.setProperty('--dm-highlight-color', CFG.highlightValueColor);
 root.setProperty('--dm-event-pad-x', CFG.eventPaddingX + 'px');
 root.setProperty('--dm-event-pad-y', CFG.eventPaddingY + 'px');
+root.setProperty('--dm-embed-image-max-h', CFG.subscriberImageMaxHeight + 'px');
 
 // ---- Layer Setup ----
 const danmakuLayer = document.getElementById('danmaku-layer');
@@ -278,6 +283,52 @@ function buildPlatformBadge(platform) {
 
 // ---- Danmaku Creation ----
 
+// ---- Subscriber Image Embedding ----
+// Regex to detect image URLs in chat messages.
+// Matches: direct image extensions (.jpg, .jpeg, .png, .gif, .webp, .gifv)
+// and known image hosts (imgur, i.imgur, cdn.discordapp, pbs.twimg, media.tenor, etc.)
+var _imageExtRe = /\.(jpe?g|png|gif|webp|gifv|bmp|svg)(\?[^\s]*)?$/i;
+var _imageHostRe = /\b(https?:\/\/(i\.)?imgur\.com\/[a-zA-Z0-9]+|https?:\/\/cdn\.discordapp\.com\/attachments\/\S+|https?:\/\/pbs\.twimg\.com\/media\/\S+|https?:\/\/media\.tenor\.com\/\S+|https?:\/\/c\.tenor\.com\/\S+|https?:\/\/i\.redd\.it\/\S+)/i;
+
+function detectImageUrls(text) {
+    var urls = [];
+    // Split text into tokens and check each URL-like token
+    var tokens = text.match(/(https?:\/\/\S+)/g);
+    if (!tokens) return urls;
+    for (var i = 0; i < tokens.length; i++) {
+        var url = tokens[i].trim();
+        // Strip trailing punctuation that isn't part of the URL
+        url = url.replace(/[,;:!?)\]}>]+$/, '');
+        if (_imageExtRe.test(url) || _imageHostRe.test(url)) {
+            // Convert gifv to gif for embeddable display
+            if (url.endsWith('.gifv')) url = url.slice(0, -1);
+            urls.push(url);
+        }
+    }
+    return urls;
+}
+
+function buildEmbedImageHtml(text) {
+    var urls = detectImageUrls(text);
+    if (urls.length === 0) return null;
+
+    // Build the message: text with image URLs replaced by inline <img> tags
+    var html = escapeHTML(text);
+    var maxH = CFG.subscriberImageMaxHeight || 60;
+
+    for (var i = 0; i < urls.length; i++) {
+        var escapedUrl = escapeHTML(urls[i]);
+        var escapedUrlEscaped = escapedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var re = new RegExp(escapedUrlEscaped, 'g');
+        var imgTag = '<img class="danmaku-embed-image" src="' + escapedUrl + '" alt="[image]" style="max-height:' + maxH + 'px;height:auto;width:auto;vertical-align:middle;border-radius:6px;object-fit:contain;display:inline-block;margin:0 4px;">';
+        html = html.replace(re, imgTag);
+    }
+
+    return html;
+}
+
+// ---- Danmaku Creation ----
+
 function createDanmakuChat(platform, data) {
     if (!shouldShowMessage('chat', data)) return;
 
@@ -325,11 +376,29 @@ function createDanmakuChat(platform, data) {
         html += '<span class="danmaku-separator">:</span>';
     }
 
-    // Message
+    // Message — check for subscriber image embedding
     var msgContent = data.messageHtml || (CFG.hideEmotes ? cleanStringOfHTMLButEmotes(text) : escapeHTML(text));
     if (CFG.hideEmotes && !data.messageHtml) {
         msgContent = cleanStringOfHTMLButEmotes(text).then ? escapeHTML(text) : cleanStringOfHTMLButEmotes(text);
     }
+
+    // Subscriber image embedding: detect image URLs and render inline
+    if (CFG.subscriberImages) {
+        var canEmbed = !CFG.subscriberImagesOnlySubs || data.isSubscriber;
+        if (canEmbed) {
+            var imageUrls = detectImageUrls(text);
+            if (imageUrls.length > 0) {
+                var embedHtml = buildEmbedImageHtml(text);
+                if (embedHtml) {
+                    // If the platform already provided messageHtml (with emotes),
+                    // we still want to embed images. Replace image URLs in the
+                    // existing HTML or use the embed version.
+                    msgContent = embedHtml;
+                }
+            }
+        }
+    }
+
     html += '<span class="danmaku-message">' + msgContent + '</span>';
 
     // Timestamp
@@ -361,6 +430,14 @@ function createDanmakuChat(platform, data) {
     if (avatarEl && avatarEl.src.indexOf('data:') !== 0) {
         avatarEl.onerror = function() { this.src = fallbackAvatar; };
     }
+
+    // Fallback: hide embed images that fail to load (show text placeholder)
+    var embedImgs = el.querySelectorAll('.danmaku-embed-image');
+    embedImgs.forEach(function(img) {
+        img.onerror = function() {
+            this.style.display = 'none';
+        };
+    });
 
     spawnDanmaku(el, false);
 }
@@ -697,6 +774,13 @@ if (isDemo) {
         { platform: 'youtube', username: 'LongTimeFan', color: '#795548', text: 'Been watching for 3 years, never disappointed' },
     ];
 
+    // Subscriber image demo messages (only used when subscriberImages is enabled)
+    var demoImageChats = [
+        { platform: 'twitch', username: 'SubWithImage', color: '#ff9800', text: 'Check this out! https://placehold.co/200x100/9146ff/white?text=Subscribe', isSubscriber: true },
+        { platform: 'twitch', username: 'ImgurFan', color: '#e91e63', text: 'OMG look https://placehold.co/150x150/ff6b6b/white?text=LOL', isSubscriber: true },
+        { platform: 'kick', username: 'KickSubImage', color: '#53fc18', text: 'https://placehold.co/180x80/53fc18/black?text=KICK+SUB', isSubscriber: true },
+    ];
+
     var demoEvents = [
         { platform: 'twitch', username: 'NewViewer123', color: '#4fc3f7', action: 'followed' },
         { platform: 'twitch', username: 'GenerousDonor', color: '#ce93d8', action: 'subscribed for 6 months' },
@@ -714,8 +798,14 @@ if (isDemo) {
                 var evt = demoEvents[Math.floor(Math.random() * demoEvents.length)];
                 createDanmakuEvent(evt.platform, { username: evt.username, color: evt.color, action: evt.action });
             } else {
-                var chat = demoChats[Math.floor(Math.random() * demoChats.length)];
-                createDanmakuChat(chat.platform, { text: chat.text, username: chat.username, color: chat.color });
+                var chat;
+                // Occasionally send image demo messages (when feature is enabled)
+                if (CFG.subscriberImages && Math.random() < 0.15) {
+                    chat = demoImageChats[Math.floor(Math.random() * demoImageChats.length)];
+                } else {
+                    chat = demoChats[Math.floor(Math.random() * demoChats.length)];
+                }
+                createDanmakuChat(chat.platform, { text: chat.text, username: chat.username, color: chat.color, isSubscriber: chat.isSubscriber });
             }
         } catch (err) {
             console.warn('[DanmakuChat] Demo error:', err);

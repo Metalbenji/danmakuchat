@@ -228,13 +228,23 @@ async function twitchChatMessage(data) {
         var badgeList = await getTwitchBadges(user.badges);
         var messageFromParts = await getTwitchMessageFromParts(data.parts);
 
+        // Check subscriber status from badges (subscriber or founder badge)
+        var isSubscriber = false;
+        if (user.badges && Array.isArray(user.badges)) {
+            isSubscriber = user.badges.some(function(b) {
+                var sid = b.set_id || b.id || '';
+                return sid === 'subscriber' || sid === 'founder';
+            });
+        }
+
         createDanmakuChat('twitch', {
             text: text,
             messageHtml: safeSanitize(messageFromParts, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'title', 'class'] }),
             username: user.displayName || userLogin,
             color: user.color,
             avatar: avatarImage,
-            badges: badgeList
+            badges: badgeList,
+            isSubscriber: isSubscriber
         });
     } catch(err) {
         console.error('[Twitch] twitchChatMessage error:', err);

@@ -76,6 +76,10 @@
     maxMsgLength: 0,
     spamProtection: 0,
     hideEmotes: false,
+    // Subscriber Images
+    subscriberImages: false,
+    subscriberImagesOnlySubs: true,
+    subscriberImageMaxHeight: 60,
     // Platforms
     showTwitch: true,
     showTwitchMessages: true,
@@ -283,6 +287,16 @@
           { key: 'showEventGlow', label: 'Show Event Glow', type: 'toggle' },
           { key: 'eventPlatformColors', label: 'Use Platform Colors', type: 'toggle' },
           { key: 'highlightValueColor', label: 'Highlight Value Color', type: 'color' },
+        ],
+      },
+      {
+        id: 'section-subscriber-images',
+        title: 'Subscriber Images',
+        icon: '🖼️',
+        settings: [
+          { key: 'subscriberImages', label: 'Enable Image Embedding', type: 'toggle' },
+          { key: 'subscriberImagesOnlySubs', label: 'Subscribers Only', type: 'toggle' },
+          { key: 'subscriberImageMaxHeight', label: 'Max Image Height', type: 'range', min: 20, max: 150, step: 5, unit: 'px' },
         ],
       },
       {
@@ -1083,6 +1097,14 @@
     { platform: 'tiktok', username: 'shadow lurker', color: '#ff0050', text: 'im just watching quietly' },
   ];
 
+  // Subscriber image demo messages (used when subscriberImages is enabled)
+  var demoImageChatMessages = [
+    { platform: 'twitch', username: 'SubWithImage', color: '#ff9800', text: 'Check this out! https://placehold.co/200x100/9146ff/white?text=Subscribe', isSubscriber: true },
+    { platform: 'twitch', username: 'ImgurFan', color: '#e91e63', text: 'OMG look https://placehold.co/150x150/ff6b6b/white?text=LOL', isSubscriber: true },
+    { platform: 'kick', username: 'KickSubImage', color: '#53fc18', text: 'https://placehold.co/180x80/53fc18/black?text=KICK+SUB', isSubscriber: true },
+    { platform: 'youtube', username: 'MemberImage', color: '#f44336', text: 'Found this https://placehold.co/160x90/ff0000/white?text=YT+Member', isSubscriber: true },
+  ];
+
   var demoEventMessages = [
     { platform: 'twitch', type: 'follow', username: 'NewFollower123', color: '#ff6b6b', action: 'just followed!' },
     { platform: 'twitch', type: 'follow', username: 'StreamWatcher99', color: '#e91e63', action: 'just followed!' },
@@ -1172,12 +1194,18 @@
       if (evt.value) msg.data.value = evt.value;
       if (evt.message) msg.data.messageHtml = evt.message;
     } else {
-      var chat = demoChatMessages[Math.floor(Math.random() * demoChatMessages.length)];
+      var chat;
+      // Occasionally send image demo messages (when feature is enabled)
+      if (config.subscriberImages && Math.random() < 0.15) {
+        chat = demoImageChatMessages[Math.floor(Math.random() * demoImageChatMessages.length)];
+      } else {
+        chat = demoChatMessages[Math.floor(Math.random() * demoChatMessages.length)];
+      }
       msg = {
         __danmakuDemo: true,
         msgType: 'chat',
         platform: chat.platform,
-        data: { text: chat.text, username: chat.username, color: chat.color }
+        data: { text: chat.text, username: chat.username, color: chat.color, isSubscriber: chat.isSubscriber }
       };
     }
 

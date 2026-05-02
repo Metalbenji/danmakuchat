@@ -153,7 +153,8 @@ async function youTubeChatMessage(data) {
         username: data.user.name,
         color: color,
         avatar: data.user.profileImageUrl,
-        badges: badgeList
+        badges: badgeList,
+        isSubscriber: !!(data.user.isSponsor || data.user.isMember)
     });
 }
 

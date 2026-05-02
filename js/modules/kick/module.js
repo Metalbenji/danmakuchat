@@ -176,13 +176,18 @@ async function kickChatMessage(data) {
 
     const messageHtml = await getKickEmotes(data, data.content || '');
 
+    // Check subscriber status from badges
+    const kickBadges = data.sender?.identity?.badges || [];
+    const isSubscriber = kickBadges.some(function(b) { return b.type === 'subscriber'; });
+
     createDanmakuChat('kick', {
         text: data.content,
         messageHtml: DOMPurify.sanitize(messageHtml, { ADD_TAGS: ['img'], ADD_ATTR: ['src', 'alt', 'class'] }),
         username: data.sender?.username || 'Unknown',
         color: data.sender?.identity?.color || '#fff',
         avatar: avatarImage,
-        badges: badgeList
+        badges: badgeList,
+        isSubscriber: isSubscriber
     });
 }
 
