@@ -55,8 +55,8 @@
     depthMaxScale: 1.5,
     depthMinOpacity: 0.3,
     depthMaxOpacity: 1.0,
-    backLayerBlur: 1,
-    backLayerOpacity: 0.7,
+    backLayerBlur: 2,
+    middleLayerBlur: 0.5,
     frontLayerGlow: true,
     // Event Messages
     eventStyle: 'solid',
@@ -69,6 +69,7 @@
     showEventGlow: true,
     eventPlatformColors: true,
     highlightValueColor: '#fbbf24',
+    eventBorderRadius: 8,
     // Filtering
     ignoreCommands: true,
     ignoreChatters: 'Streamlabs,Streamelements',
@@ -255,10 +256,10 @@
           { key: 'depthMaxScale', label: 'Max Scale', type: 'range', min: 1, max: 1.5, step: 0.05, unit: '' },
           { key: 'depthMinOpacity', label: 'Min Opacity', type: 'range', min: 0.1, max: 0.6, step: 0.05, unit: '' },
           { key: 'depthMaxOpacity', label: 'Max Opacity', type: 'range', min: 0.7, max: 1, step: 0.05, unit: '' },
-          // Back Layer Effects
-          { key: '_sub_backlayer', label: 'Back Layer Effects', type: 'subsection' },
+          // Layer Blur (distance effect)
+          { key: '_sub_backlayer', label: 'Layer Blur (Distance Effect)', type: 'subsection' },
           { key: 'backLayerBlur', label: 'Back Layer Blur', type: 'range', min: 0, max: 5, step: 0.5, unit: 'px' },
-          { key: 'backLayerOpacity', label: 'Back Layer Opacity', type: 'range', min: 0.1, max: 1, step: 0.05, unit: '' },
+          { key: 'middleLayerBlur', label: 'Middle Layer Blur', type: 'range', min: 0, max: 3, step: 0.25, unit: 'px' },
           { key: 'frontLayerGlow', label: 'Front Layer Glow', type: 'toggle' },
         ],
       },
@@ -287,6 +288,7 @@
           { key: 'showEventGlow', label: 'Show Event Glow', type: 'toggle' },
           { key: 'eventPlatformColors', label: 'Use Platform Colors', type: 'toggle' },
           { key: 'highlightValueColor', label: 'Highlight Value Color', type: 'color' },
+          { key: 'eventBorderRadius', label: 'Event Border Radius', type: 'range', min: 0, max: 24, step: 1, unit: 'px' },
         ],
       },
       {

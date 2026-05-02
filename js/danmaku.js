@@ -53,8 +53,8 @@ const CFG = {
     depthMaxScale: Number(getURLParam("depthMaxScale", 1.5)),
     depthMinOpacity: Number(getURLParam("depthMinOpacity", 0.3)),
     depthMaxOpacity: Number(getURLParam("depthMaxOpacity", 1.0)),
-    backLayerBlur: Number(getURLParam("backLayerBlur", 1)),
-    backLayerOpacity: Number(getURLParam("backLayerOpacity", 0.7)),
+    backLayerBlur: Number(getURLParam("backLayerBlur", 2)),
+    middleLayerBlur: Number(getURLParam("middleLayerBlur", 0.5)),
     frontLayerGlow: getURLParam("frontLayerGlow", true),
     // Event Messages
     eventStyle: getURLParam("eventStyle", "solid"),
@@ -67,6 +67,7 @@ const CFG = {
     showEventGlow: getURLParam("showEventGlow", true),
     eventPlatformColors: getURLParam("eventPlatformColors", true),
     highlightValueColor: getURLParam("highlightValueColor", "#fbbf24"),
+    eventBorderRadius: Number(getURLParam("eventBorderRadius", 8)),
     // Filtering
     ignoreCommands: getURLParam("ignoreCommands", true),
     ignoreChatters: getURLParam("ignoreChatters", "Streamlabs,Streamelements"),
@@ -106,9 +107,11 @@ danmakuLayer.classList.add('layer-' + CFG.LAYER);
 
 
 
+// Apply layer-specific blur (distance effect)
 if (CFG.LAYER === 'back') {
     danmakuLayer.style.filter = 'blur(' + CFG.backLayerBlur + 'px)';
-    danmakuLayer.style.opacity = CFG.backLayerOpacity;
+} else if (CFG.LAYER === 'middle') {
+    danmakuLayer.style.filter = 'blur(' + CFG.middleLayerBlur + 'px)';
 }
 
 // ---- Apply body-level styles ----
@@ -481,6 +484,9 @@ function createDanmakuEvent(platform, data) {
     if (!CFG.eventPlatformColors) {
         el.classList.add('event-no-platform-color');
     }
+
+    // Apply event border radius
+    el.style.borderRadius = CFG.eventBorderRadius + 'px';
 
     var html = '';
 

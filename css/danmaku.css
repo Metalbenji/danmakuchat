@@ -27,20 +27,20 @@ html, body {
     overflow: visible;
     pointer-events: none;
     /* Promote to its own compositor layer when blur is applied */
-    will-change: filter, opacity;
+    will-change: filter;
 }
 
 /* ---- Layer variants ---- */
 
 #danmaku-layer.layer-back {
-    filter: blur(var(--dm-back-blur, 1.5px));
-    opacity: var(--dm-back-opacity, 0.7);
+    filter: blur(var(--dm-back-blur, 2px));
     /* Force GPU layer promotion for blur compositing */
     transform: translate3d(0, 0, 0);
 }
 
 #danmaku-layer.layer-middle {
-    /* No extra effects */
+    filter: blur(var(--dm-middle-blur, 0.5px));
+    transform: translate3d(0, 0, 0);
 }
 
 #danmaku-layer.layer-front {
