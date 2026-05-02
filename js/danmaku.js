@@ -167,9 +167,15 @@ function checkSpamProtection(username) {
 var currentLane = 0;
 var lanes = new Map(); // laneIndex -> { element, endTime }
 
-function getAvailableLane(duration) {
+function getAvailableLane(duration, elHeight) {
     var containerHeight = window.innerHeight;
-    var totalLanes = Math.floor(containerHeight / CFG.danmakuDensity);
+    // Safe lane height: density minus element height, so the bottom of the
+    // message never extends past the viewport. Fall back to density if
+    // elHeight isn't provided yet.
+    var safeStep = (elHeight && elHeight > 0)
+        ? Math.max(CFG.danmakuDensity, elHeight + 2)
+        : CFG.danmakuDensity;
+    var totalLanes = Math.max(1, Math.floor((containerHeight - elHeight) / safeStep));
     if (totalLanes < 1) totalLanes = 1;
     var now = Date.now();
 
@@ -445,7 +451,6 @@ function spawnDanmaku(el, isEvent) {
         baseDuration += CFG.eventDurationBonus;
     }
 
-    var lane = getAvailableLane(baseDuration);
     var isRight = CFG.direction === 'right';
 
     // Depth effect: random zoom/opacity for chat messages on middle layer
@@ -462,10 +467,17 @@ function spawnDanmaku(el, isEvent) {
     danmakuLayer.appendChild(el);
 
     var elWidth = el.offsetWidth;
+    var elHeight = el.offsetHeight;
     var containerWidth = window.innerWidth;
+    var containerHeight = window.innerHeight;
+
+    // Get a lane that fits within the viewport
+    var lane = getAvailableLane(baseDuration, elHeight);
+    var maxTop = Math.max(0, containerHeight - elHeight);
+    var laneTop = Math.min(lane * CFG.danmakuDensity, maxTop);
 
     // Position element at the starting edge
-    el.style.top = (lane * CFG.danmakuDensity) + 'px';
+    el.style.top = laneTop + 'px';
 
     // Use native CSS @keyframes animation (GPU-composited, buttery smooth)
     if (isRight) {
