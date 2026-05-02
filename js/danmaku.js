@@ -382,8 +382,8 @@ function createDanmakuChat(platform, data) {
         msgContent = cleanStringOfHTMLButEmotes(text).then ? escapeHTML(text) : cleanStringOfHTMLButEmotes(text);
     }
 
-    // Subscriber image embedding: detect image URLs and render inline
-    if (CFG.subscriberImages) {
+    // Subscriber image embedding: detect image URLs and render inline (front layer only)
+    if (CFG.subscriberImages && CFG.LAYER === 'front') {
         var canEmbed = !CFG.subscriberImagesOnlySubs || data.isSubscriber;
         if (canEmbed) {
             var imageUrls = detectImageUrls(text);
