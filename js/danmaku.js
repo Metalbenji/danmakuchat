@@ -110,9 +110,7 @@ danmakuLayer.classList.add('layer-' + CFG.LAYER);
 // Apply layer-specific blur (distance effect)
 if (CFG.LAYER === 'back') {
     danmakuLayer.style.filter = 'blur(' + CFG.backLayerBlur + 'px)';
-} else if (CFG.LAYER === 'back') {
-    danmakuLayer.style.filter = 'blur(' + CFG.middleLayerBlur + 'px)';
-}
+
 
 // ---- Apply body-level styles ----
 document.body.style.fontFamily = CFG.chatFontFamily + ', sans-serif';
@@ -227,8 +225,8 @@ function _hashStr(str) {
 function _getAssignedLayer(username, text) {
     var seed = username + '|' + text + '|' + Date.now();
     var r = _hashStr(seed);
-    if (r < CFG.frontChance) return front;
-    return back;
+    if (r < CFG.frontChance) return 'front';
+    return 'back';
 }
 
 function shouldShowMessage(type, data, forceFront) {
