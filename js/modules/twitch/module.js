@@ -23,7 +23,7 @@ const showTwitchRewardRedemptions = getURLParam("showTwitchRewardRedemptions", t
 const showTwitchRaids = getURLParam("showTwitchRaids", true);
 const showTwitchAnnouncements = getURLParam("showTwitchAnnouncements", true);
 const showTwitchSharedChat = getURLParam("showTwitchSharedChat", true);
-
+const ignoreCommands = getURLParam("ignoreCommands", true);
 const twitchAvatars = new Map();
 const twitchStreamer = {};
 
