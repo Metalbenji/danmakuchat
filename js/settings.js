@@ -47,7 +47,7 @@
     elementGap: 5,
     // Depth & Layers
     layer: 'all',
-    frontChance: 0.2,
+    frontChance: 0.5,
     backChance: 0.3,
     eventMiddleChance: 0.3,
     depthEffect: true,

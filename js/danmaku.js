@@ -45,7 +45,7 @@ const CFG = {
     borderRadius: Number(getURLParam("borderRadius", 5)),
     elementGap: Number(getURLParam("elementGap", 5)),
     // Depth & Layers
-    frontChance: Number(getURLParam("frontChance", 0.2)),
+    frontChance: Number(getURLParam("frontChance", 0.5)),
 
 
     depthEffect: getURLParam("depthEffect", true),
