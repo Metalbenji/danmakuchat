@@ -243,7 +243,7 @@
             { value: 'back', label: 'Back (Blurred depth)' },
             { value: 'all', label: 'All Layers (stacked)' },
           ]},
-          { key: 'frontChance', label: 'Front Layer Chance', type: 'range', min: 0, max: 0.2, step: 0.01, unit: '%', displayPercent: true },
+          { key: 'frontChance', label: 'Front Layer Chance', type: 'range', min: 0, max: 1, step: 0.05, unit: '%', displayPercent: true },
           // Star-Field Depth
           { key: '_sub_depth', label: 'Star-Field Depth Effect', type: 'subsection' },
           { key: 'depthEffect', label: 'Depth Effect', type: 'toggle' },
