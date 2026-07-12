@@ -1,4 +1,5 @@
 /* ============================================ */
+const ignoreCommands = getURLParam("ignoreCommands", true);
 /*         TIKTOK MODULE - DANMAKU CHAT         */
 /* ============================================ */
 
