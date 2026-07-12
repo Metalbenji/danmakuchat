@@ -7,7 +7,7 @@ A danmaku (bullet chat / 弾幕) style multi-platform chat overlay for OBS. Chat
 ## Features
 
 - **Classic Danmaku Overlay** — Messages scroll across the screen in traditional bullet-chat style
-- **3-Layer Depth System** — Front (events + rare messages), Middle (standard chat with depth effect), Back (blurred, faded) — each layer is a separate OBS scene you can compose freely
+- **2-Layer System** — Front (in front of you - events), Back (behind you - standard chat with depth effect) — each layer is a separate OBS scene you can compose freely
 - **10 Platform Modules** — Twitch, YouTube, Kick, TikTok, StreamElements, StreamLabs, Patreon, Ko-fi, TipeeeStream, Fourthwall
 - **Real Avatars** — Fetches actual Twitch avatars from Decapi; auto-generates deterministic gradient avatars for other platforms (no network dependency)
 - **Platform Badges** — Twitch subscriber/mod/broadcaster, Kick mod/VIP/subscriber/verified/broadcaster/og, YouTube icons, and all platform logos in 5 display styles
@@ -26,7 +26,7 @@ A danmaku (bullet chat / 弾幕) style multi-platform chat overlay for OBS. Chat
 2. **Open `settings.html`** in your browser (double-click it, or drag it into Chrome/Firefox)
 3. The live preview starts automatically with demo messages
 4. Configure your settings (platforms, appearance, etc.)
-5. Copy the 3 layer URLs using the **Front / Middle / Back** buttons at the top
+5. Copy the 2 layer URLs using the **Front / Back** buttons at the top
 6. In OBS, add 3 Browser Sources — one URL per source, transparent background checked
 7. Stack them in your scene: Back (bottom) → Middle → Front (top)
 
@@ -50,7 +50,6 @@ Then open `http://localhost:8088/settings.html` in your browser.
 4. Select the downloaded `danmaku_setup.lua` file
 5. The script creates 3 scenes automatically:
    - **Danmaku Back** — with a browser source pointing to the back layer
-   - **Danmaku Middle** — with a browser source pointing to the middle layer
    - **Danmaku Front** — with a browser source pointing to the front layer
 6. Add these scenes as scene sources to your streaming scene and layer them however you want
 
@@ -100,7 +99,7 @@ All donation platforms route through Streamer.bot — no extra WebSocket connect
 ### Method A: Manual Setup
 
 1. **Open `settings.html`** in your browser and configure all your settings
-2. **Copy the layer URLs** using the Front / Middle / Back buttons at the top of the page
+2. **Copy the layer URLs** using the Front / Back buttons at the top of the page
 3. In OBS, go to your streaming scene
 4. Add **3 Browser Sources** (Sources → + → Browser):
    - Source 1: Name it "Danmaku Back", paste the Back URL
@@ -122,7 +121,7 @@ See [Quick Start → Option 3](#option-3-obs-lua-script-auto-setup) above.
 
 ### Method C: Separate Scenes (Recommended for Compositing)
 
-The OBS Lua script creates 3 separate scenes (one per layer). This lets you add each scene as a **scene source** to any other scene, giving you full control over positioning, cropping, and layering. For example:
+The OBS Lua script creates 2 separate scenes (one per layer). This lets you add each scene as a **scene source** to any other scene, giving you full control over positioning, cropping, and layering. For example:
 
 - Add "Danmaku Back" to your gameplay scene, scaled to 80% with blur
 - Add "Danmaku Middle" to your BRB screen at a different position
@@ -187,13 +186,13 @@ Open `settings.html` to access the full settings dashboard. All settings are org
 | Preview Layer | All | Which layer to preview (Middle, Front, Back, All) |
 | Front Layer Chance | 20% | Chance a normal chat message goes to the front layer |
 | Back Layer Chance | 30% | Chance a normal chat message goes to the back layer |
-| Remaining messages | 50% | Go to the middle layer |
+
 | Events | Always | Events (subs, follows, donations) always go to front |
 
 **Star-Field Depth Effect**
 | Setting | Default | Description |
 |---------|---------|-------------|
-| Depth Effect | On | Random scale and opacity on middle-layer messages |
+| Depth Effect | On | Random scale and opacity on back-layer messages |
 | Min Scale | 0.2 | Smallest size for depth-shrunk messages |
 | Max Scale | 1.5 | Largest size for depth-grown messages |
 | Min/Max Opacity | 0.3 – 1.0 | Opacity range for depth effect |
@@ -261,7 +260,6 @@ Streamer.bot (WebSocket)
 The overlay runs 3 independent browser sources in OBS, each loading the same `overlay.html` with a different `?layer=` parameter:
 
 - **`?layer=back`** — Messages routed to the back layer get CSS blur and reduced opacity for a depth-of-field effect
-- **`?layer=middle`** — Standard chat with optional depth effect (random scale/opacity per message)
 - **`?layer=front`** — Events (subs, follows, donations) and rare messages with glow effects
 
 All 3 sources use **deterministic hash-based routing** — the same message always goes to the same layer, so there's no duplication or disagreement between sources.

@@ -8,7 +8,7 @@ const isOBS = typeof window.obsstudio !== 'undefined';
 // Read ALL settings from URL params
 const CFG = {
     // Layer
-    LAYER: getURLParam("layer", "middle"),
+    LAYER: getURLParam("layer", "back"),
     // Font
     fontSize: Number(getURLParam("fontSize", 2.5)),
     chatFontFamily: getURLParam("chatFontFamily", "DM Sans"),
@@ -46,15 +46,15 @@ const CFG = {
     elementGap: Number(getURLParam("elementGap", 5)),
     // Depth & Layers
     frontChance: Number(getURLParam("frontChance", 0.2)),
-    backChance: Number(getURLParam("backChance", 0.3)),
-    eventMiddleChance: Number(getURLParam("eventMiddleChance", 0.3)),
+
+
     depthEffect: getURLParam("depthEffect", true),
     depthMinScale: Number(getURLParam("depthMinScale", 0.2)),
     depthMaxScale: Number(getURLParam("depthMaxScale", 1.5)),
     depthMinOpacity: Number(getURLParam("depthMinOpacity", 0.3)),
     depthMaxOpacity: Number(getURLParam("depthMaxOpacity", 1.0)),
     backLayerBlur: Number(getURLParam("backLayerBlur", 2)),
-    middleLayerBlur: Number(getURLParam("middleLayerBlur", 0.5)),
+
     frontLayerGlow: getURLParam("frontLayerGlow", true),
     // Event Messages
     eventStyle: getURLParam("eventStyle", "solid"),
@@ -110,7 +110,7 @@ danmakuLayer.classList.add('layer-' + CFG.LAYER);
 // Apply layer-specific blur (distance effect)
 if (CFG.LAYER === 'back') {
     danmakuLayer.style.filter = 'blur(' + CFG.backLayerBlur + 'px)';
-} else if (CFG.LAYER === 'middle') {
+} else if (CFG.LAYER === 'back') {
     danmakuLayer.style.filter = 'blur(' + CFG.middleLayerBlur + 'px)';
 }
 
@@ -227,9 +227,8 @@ function _hashStr(str) {
 function _getAssignedLayer(username, text) {
     var seed = username + '|' + text + '|' + Date.now();
     var r = _hashStr(seed);
-    if (r < CFG.frontChance) return 'front';
-    if (r < CFG.frontChance + CFG.backChance) return 'back';
-    return 'middle';
+    if (r < CFG.frontChance) return front;
+    return back;
 }
 
 function shouldShowMessage(type, data, forceFront) {
@@ -238,14 +237,8 @@ function shouldShowMessage(type, data, forceFront) {
         return CFG.LAYER === 'front';
     }
     if (type === 'event') {
-        // Events route to front or middle (never back), based on hash
-        var username = (data && (data.username || data.user || '')) || '';
-        var text = (data && (data.text || data.message || '')) || '';
-        var seed = 'evt:' + username + '|' + text + '|' + Date.now();
-        var r = _hashStr(seed);
-        // eventMiddleChance = chance of going to middle; rest go to front
-        var assignedLayer = r < CFG.eventMiddleChance ? 'middle' : 'front';
-        return CFG.LAYER === assignedLayer;
+        // Events always route to front
+        return CFG.LAYER === 'front';
     }
     // Chat: deterministically route to a layer
     var username = (data && (data.username || data.user || '')) || '';
@@ -575,13 +568,13 @@ function spawnDanmaku(el, isEvent) {
 
     var isRight = CFG.direction === 'right';
 
-    // Depth effect: random zoom/opacity for chat messages on middle layer
+    // Depth effect: random zoom/opacity for chat messages on back layer
     // Only applies when depthEffect is enabled AND using multiple layers.
     // Uses CSS custom property --dm-depth-scale so it composites with the
     // @keyframes translate3d() instead of clashing with it.
     // Opacity is multiplied with the user's opacity setting so the slider
     // still has an effect when depth is active.
-    if (CFG.depthEffect && !isEvent && CFG.LAYER === 'middle') {
+    if (CFG.depthEffect && !isEvent && CFG.LAYER === 'back') {
         var depthScale = CFG.depthMinScale + Math.random() * (CFG.depthMaxScale - CFG.depthMinScale);
         var depthOpacity = CFG.depthMinOpacity + Math.random() * (CFG.depthMaxOpacity - CFG.depthMinOpacity);
         el.style.setProperty('--dm-depth-scale', depthScale.toFixed(3));
