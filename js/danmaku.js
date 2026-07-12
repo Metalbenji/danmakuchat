@@ -110,7 +110,7 @@ danmakuLayer.classList.add('layer-' + CFG.LAYER);
 // Apply layer-specific blur (distance effect)
 if (CFG.LAYER === 'back') {
     danmakuLayer.style.filter = 'blur(' + CFG.backLayerBlur + 'px)';
-
+}
 
 // ---- Apply body-level styles ----
 document.body.style.fontFamily = CFG.chatFontFamily + ', sans-serif';
