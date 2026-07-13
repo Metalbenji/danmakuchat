@@ -15,6 +15,7 @@ const showKickRaids = getURLParam("showKickRaids", true);
 const showKickGifts = getURLParam("showKickGifts", true);
 
 const kickAvatars = new Map();
+const MAX_KICK_AVATARS = 500;
 let kickSubBadges = [];
 let kick7TVEmojis = new Map();
 const kickWebSocketURL = getURLParam("kickWebSocketURL", 'wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false');
@@ -112,6 +113,7 @@ async function getKickAvatar(username) {
     // Generate a deterministic SVG avatar (gradient + silhouette).
     // No dependency on third-party services.
     const url = generateAvatarUrl(username, '');
+    if (kickAvatars.size >= MAX_KICK_AVATARS) { const k = kickAvatars.keys().next().value; kickAvatars.delete(k); }
     kickAvatars.set(username, url);
     return url;
 }

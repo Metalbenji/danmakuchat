@@ -26,6 +26,15 @@ const showTwitchRaids = getURLParam("showTwitchRaids", true);
 const showTwitchAnnouncements = getURLParam("showTwitchAnnouncements", true);
 const showTwitchSharedChat = getURLParam("showTwitchSharedChat", true);
 const twitchAvatars = new Map();
+const MAX_TWITCH_AVATARS = 500;
+
+function cacheAvatar(login, url) {
+    if (twitchAvatars.size >= MAX_TWITCH_AVATARS) {
+        const firstKey = twitchAvatars.keys().next().value;
+        twitchAvatars.delete(firstKey);
+    }
+    twitchAvatars.set(login, url);
+}
 const twitchStreamer = {};
 
 // ---- Streamer.bot user info extraction ----
@@ -156,7 +165,7 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
 
     // Prefer Streamer.bot's provided profileImageUrl (from event data).
     if (profileImageUrl && profileImageUrl.indexOf('http') === 0) {
-        twitchAvatars.set(login, profileImageUrl);
+        cacheAvatar(login, profileImageUrl);
         return profileImageUrl;
     }
 
@@ -170,7 +179,7 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
             decApiFailures = 0;
             var avatarUrl = (await resp.text()).trim();
             if (avatarUrl && avatarUrl.indexOf('http') === 0) {
-                twitchAvatars.set(login, avatarUrl);
+                cacheAvatar(login, avatarUrl);
                 return avatarUrl;
             }
         }
@@ -185,7 +194,7 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
 
     // Final fallback: generated SVG placeholder
     var fallback = generateAvatarUrl(login, color);
-    twitchAvatars.set(login, fallback);
+    cacheAvatar(login, fallback);
     return fallback;
 }
 

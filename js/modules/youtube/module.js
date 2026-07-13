@@ -13,6 +13,7 @@ const showYouTubeGiftMemberships = getURLParam("showYouTubeGiftMemberships", tru
 const showYouTubeMembershipsTrain = getURLParam("showYouTubeMembershipsTrain", true);
 
 const youtubeUserColors = new Map();
+const MAX_YOUTUBE_COLORS = 500;
 let youTubeBTTVEmotes = null;
 
 const youtubeMessageHandlers = {
@@ -51,6 +52,7 @@ function getYouTubeUserColor(username) {
     }
     const hue = Math.random() * 360;
     const color = `hsl(${hue}, 80%, 65%)`;
+    if (youtubeUserColors.size >= MAX_YOUTUBE_COLORS) { const k = youtubeUserColors.keys().next().value; youtubeUserColors.delete(k); }
     youtubeUserColors.set(username, color);
     return color;
 }

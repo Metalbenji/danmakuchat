@@ -585,6 +585,10 @@ function spawnDanmaku(el, isEvent) {
     // to avoid forced synchronous reflows from interleaved read/write.
     el.style.visibility = 'hidden';
     danmakuLayer.appendChild(el);
+    // Trim excess elements to prevent memory leaks during long streams
+    while (danmakuLayer.children.length > CFG.maxDanmaku) {
+        danmakuLayer.removeChild(danmakuLayer.firstChild);
+    }
 
     var elWidth = el.offsetWidth;
     var elHeight = el.offsetHeight;
