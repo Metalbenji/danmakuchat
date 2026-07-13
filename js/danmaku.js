@@ -223,7 +223,7 @@ function _hashStr(str) {
 }
 
 function _getAssignedLayer(username, text) {
-    var seed = username + '|' + text + '|' + Date.now();
+    var seed = username + '|' + text;
     var r = _hashStr(seed);
     if (r < CFG.frontChance) return 'front';
     return 'back';

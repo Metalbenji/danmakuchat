@@ -78,7 +78,8 @@ var _sbReconnectDelay = 2000;
 var _sbMaxReconnectDelay = 30000;
 
 function _sbConnect() {
-    var url = 'ws://' + streamerBotServerAddress + ':' + streamerBotServerPort + '/';
+    var wsProtocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+    var url = wsProtocol + streamerBotServerAddress + ':' + streamerBotServerPort + '/';
     console.log('[DanmakuChat] Connecting to', url);
     _sbHelloReceived = false;
 
@@ -300,7 +301,8 @@ var registerPlatformHandlersToStreamerBot = function(handlers, logPrefix) {
 async function getStreamerInfo() {
     var addr = streamerBotServerAddress || '127.0.0.1';
     var port = streamerBotServerPort || '8080';
-    var url = 'http://' + addr + ':' + port + '/GetBroadcaster';
+    var httpProtocol = (window.location.protocol === 'https:') ? 'https://' : 'http://';
+    var url = httpProtocol + addr + ':' + port + '/GetBroadcaster';
 
     try {
         var resp = await fetch(url);

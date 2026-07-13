@@ -18,7 +18,7 @@ const showKickGifts = getURLParam("showKickGifts", true);
 const kickAvatars = new Map();
 let kickSubBadges = [];
 let kick7TVEmojis = new Map();
-const kickWebSocketURL = 'wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false';
+const kickWebSocketURL = getURLParam("kickWebSocketURL", 'wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false');
 
 // Kick messages come via direct WebSocket (not just Streamer.bot)
 const kickMessageHandlers = {

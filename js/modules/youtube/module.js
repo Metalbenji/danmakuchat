@@ -14,7 +14,7 @@ const showYouTubeGiftMemberships = getURLParam("showYouTubeGiftMemberships", tru
 const showYouTubeMembershipsTrain = getURLParam("showYouTubeMembershipsTrain", true);
 
 const youtubeUserColors = new Map();
-let youTubeBTTVEmotes = [];
+let youTubeBTTVEmotes = null;
 
 const youtubeMessageHandlers = {
     'YouTube.Message': (response) => {
@@ -71,8 +71,10 @@ async function getYouTubeEmotes(data, messageText) {
     const channelId = data.broadcast?.channelId;
     if (!channelId) return escapeHTML(message);
 
-    // Load BTTV emotes
-    if (youTubeBTTVEmotes.length === 0) {
+    // Load BTTV emotes once per session
+    // null = not yet loaded, [] = loaded but empty/unavailable
+    if (youTubeBTTVEmotes === null) {
+        youTubeBTTVEmotes = [];
         try {
             const res = await fetch(`https://api.betterttv.net/3/cached/users/youtube/${channelId}`);
             const emoteData = await res.json();
@@ -80,11 +82,8 @@ async function getYouTubeEmotes(data, messageText) {
                 ...(emoteData.sharedEmotes || []),
                 ...(emoteData.channelEmotes || [])
             ];
-            if (youTubeBTTVEmotes.length === 0) {
-                youTubeBTTVEmotes = [{ code: 'fakeemote', id: 'fakeemote' }];
-            }
         } catch (err) {
-            youTubeBTTVEmotes = [];
+            // BTTV unavailable — stays [], no retry this session
         }
     }
 
