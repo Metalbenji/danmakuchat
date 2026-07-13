@@ -95,7 +95,8 @@ function _sbConnect() {
         console.log('[DanmakuChat] Connected, waiting for Hello...');
     };
 
-    _sbWebSocket.onmessage = function(event) {
+    _sbWebSocket.onmessage = function(event) {try {
+
         try {
             if (!event.data || typeof event.data !== 'string') return;
             var msg = JSON.parse(event.data);
@@ -166,6 +167,9 @@ function _sbConnect() {
             }
         } catch(err) {
             // Not JSON or parse error, ignore
+        }
+        } catch(err) {
+            console.error('[DanmakuChat] Message handler error:', err);
         }
     };
 
