@@ -1,5 +1,4 @@
 /* ============================================ */
-const ignoreCommands = getURLParam("ignoreCommands", true);
 /*          KICK MODULE - DANMAKU CHAT          */
 /* ============================================ */
 
@@ -143,7 +142,9 @@ async function getKickBadges(badges) {
 
 async function loadKickSubBadges() {
     try {
-        const resp = await fetch('https://kick.com/badges');
+        const corsProxy = getURLParam('corsProxy', '');
+        const badgesUrl = corsProxy ? corsProxy + 'https://kick.com/badges' : 'https://kick.com/badges';
+        const resp = await fetch(badgesUrl);
         const data = await resp.json();
         kickSubBadges = data.badge_tiers?.subscriber || [];
     } catch (e) {

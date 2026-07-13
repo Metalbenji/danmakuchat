@@ -4,6 +4,7 @@
 
 // ---- Configuration ----
 const isOBS = typeof window.obsstudio !== 'undefined';
+const ignoreCommands = getURLParam("ignoreCommands", true);
 
 // Read ALL settings from URL params
 const CFG = {

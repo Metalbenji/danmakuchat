@@ -12,6 +12,8 @@
 /* ============================================ */
 
 const twitchModule = true;
+let decApiFailures = 0;
+let decApiDisabled = false;
 const showTwitch = getURLParam("showTwitch", true);
 const showTwitchMessages = getURLParam("showTwitchMessages", true);
 const showTwitchFollows = getURLParam("showTwitchFollows", true);
@@ -23,7 +25,6 @@ const showTwitchRewardRedemptions = getURLParam("showTwitchRewardRedemptions", t
 const showTwitchRaids = getURLParam("showTwitchRaids", true);
 const showTwitchAnnouncements = getURLParam("showTwitchAnnouncements", true);
 const showTwitchSharedChat = getURLParam("showTwitchSharedChat", true);
-const ignoreCommands = getURLParam("ignoreCommands", true);
 const twitchAvatars = new Map();
 const twitchStreamer = {};
 
@@ -163,8 +164,10 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
     // Fetch from decapi.me which returns the actual Twitch CDN URL as text.
     // Has CORS headers (Access-Control-Allow-Origin: *) so works from file://.
     try {
+        if (decApiDisabled) throw new Error('DecAPI disabled');
         var resp = await fetch('https://decapi.me/twitch/avatar/' + encodeURIComponent(login));
         if (resp.ok) {
+            decApiFailures = 0;
             var avatarUrl = (await resp.text()).trim();
             if (avatarUrl && avatarUrl.indexOf('http') === 0) {
                 twitchAvatars.set(login, avatarUrl);
@@ -172,6 +175,11 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
             }
         }
     } catch(err) {
+        decApiFailures++;
+        if (decApiFailures >= 3 && !decApiDisabled) {
+            decApiDisabled = true;
+            console.warn('[DanmakuChat] DecAPI failed 3 times, disabling for session');
+        }
         // Fetch failed (offline, etc.) — fall through to placeholder
     }
 
