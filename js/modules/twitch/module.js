@@ -24,6 +24,24 @@ const showTwitchAnnouncements = getURLParam("showTwitchAnnouncements", true);
 const showTwitchSharedChat = getURLParam("showTwitchSharedChat", true);
 const twitchAvatars = new Map();
 const MAX_TWITCH_AVATARS = 500;
+const TWITCH_AVATAR_CACHE_KEY = 'danmakuchat_twitch_avatars_v1';
+
+// Restore avatar cache from a previous session so repeat viewers
+// render instantly without a DecAPI round-trip.
+try {
+    const cachedAvatars = localStorage.getItem(TWITCH_AVATAR_CACHE_KEY);
+    if (cachedAvatars) {
+        const parsed = JSON.parse(cachedAvatars);
+        if (parsed && typeof parsed === 'object') {
+            for (const [login, url] of Object.entries(parsed)) {
+                twitchAvatars.set(login, url);
+                if (twitchAvatars.size >= MAX_TWITCH_AVATARS) break;
+            }
+        }
+    }
+} catch (e) {
+    // localStorage unavailable (privacy mode / file:// restrictions) — ignore
+}
 
 function cacheAvatar(login, url) {
     if (twitchAvatars.size >= MAX_TWITCH_AVATARS) {
@@ -31,6 +49,11 @@ function cacheAvatar(login, url) {
         twitchAvatars.delete(firstKey);
     }
     twitchAvatars.set(login, url);
+    try {
+        localStorage.setItem(TWITCH_AVATAR_CACHE_KEY, JSON.stringify(Object.fromEntries(twitchAvatars)));
+    } catch (e) {
+        // Ignore quota / availability errors
+    }
 }
 const twitchStreamer = {};
 
@@ -204,7 +227,7 @@ async function getTwitchMessageFromParts(parts) {
             return '<img src="' + part.imageUrl + '" alt="' + escapeHTML(part.text) + '" title="' + escapeHTML(part.text) + '" class="emote">';
         }
         if (part.type === 'cheer') {
-            return '';
+            return escapeHTML(part.text);
         }
         if (typeof part.text === 'string') {
             return escapeHTML(part.text);
