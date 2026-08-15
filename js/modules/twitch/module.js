@@ -2,13 +2,10 @@
 /*          TWITCH MODULE - DANMAKU CHAT        */
 /* ============================================ */
 /*  Streamer.bot event data field mapping:       */
-/*  ChatMessage:  data.message.username,          */
-/*                data.message.displayName,       */
-/*                data.message.color,             */
-/*                data.message.badges,            */
-/*                data.text, data.parts            */
-/*  Follow/etc:  data.user_name (flat),           */
-/*                data.user.name (nested)         */
+/*  v1.0.5+:  ChatMessage: data.user (nested),   */
+/*            data.text, data.parts              */
+/*  Follow/etc:  data.user (nested)              */
+/*  (legacy data.message object removed in 1.0.5)*/
 /* ============================================ */
 
 const twitchModule = true;
@@ -40,34 +37,21 @@ const twitchStreamer = {};
 // ---- Streamer.bot user info extraction ----
 // Streamer.bot uses different structures per event type.
 // ChatMessage nests user info under data.message
-// Other events use data.user (nested object) or flat fields like data.user_name
-// Streamer.bot includes profileImageUrl in the user data — no separate API call needed.
+// v1.0.5+: user info is nested under data.user (name = display name)
 function _twitchUser(data) {
-    // ChatMessage: data.message.username, data.message.displayName, etc.
-    if (data.message && data.message.username) {
-        return {
-            login:      data.message.username,
-            displayName:data.message.displayName || data.message.username,
-            name:       data.message.displayName || data.message.username,
-            color:      data.message.color,
-            badges:     data.message.badges,
-            id:         data.message.userId || data.message.userID,
-            profileImageUrl: data.message.profileImageUrl || data.message.profile_image_url || '',
-        };
-    }
-    // Other events: data.user (nested object)
+    // v1.0.5+: data.user (nested object) — ChatMessage, Follow, Sub, Cheer, etc.
     if (data.user) {
         return {
             login:      data.user.login || data.user.username || data.user.name || '',
-            displayName:data.user.displayName || data.user.name || '',
-            name:       data.user.name || data.user.displayName || '',
+            displayName:data.user.name || data.user.displayName || data.user.username || data.user.login || '',
+            name:       data.user.name || data.user.displayName || data.user.username || '',
             color:      data.user.color,
             badges:     data.user.badges,
             id:         data.user.id || data.user.userId,
             profileImageUrl: data.user.profileImageUrl || data.user.profile_image_url || '',
         };
     }
-    // Flat fields (Follow, Raid, RewardRedemption, etc.)
+    // Flat fields (pre-1.0.5 Follow, Raid, RewardRedemption, etc.)
     if (data.user_name || data.username) {
         return {
             login:      data.user_login || data.username || data.user_name || '',
@@ -77,6 +61,18 @@ function _twitchUser(data) {
             badges:     data.badges,
             id:         data.user_id,
             profileImageUrl: data.profileImageUrl || data.profile_image_url || data.user_profileImageUrl || '',
+        };
+    }
+    // Legacy pre-1.0.5 ChatMessage object (no longer sent by Streamer.bot 1.0.5+)
+    if (data.message && data.message.username) {
+        return {
+            login:      data.message.username,
+            displayName:data.message.displayName || data.message.username,
+            name:       data.message.displayName || data.message.username,
+            color:      data.message.color,
+            badges:     data.message.badges,
+            id:         data.message.userId || data.message.userID,
+            profileImageUrl: data.message.profileImageUrl || data.message.profile_image_url || '',
         };
     }
     return null;
