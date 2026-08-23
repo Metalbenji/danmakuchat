@@ -158,6 +158,8 @@ Open `settings.html` to access the full settings dashboard. All settings are org
 | Scroll Speed | 15s | How long a message takes to cross the screen |
 | Speed Randomness | 3s | Random variation added to scroll speed |
 | Lane Density | 28px | Vertical spacing between message lanes |
+| Lane Reuse Gap | 40px | Minimum pixel gap before the same lane is reused (higher = fewer message trains, less bunching) |
+| Vertical Jitter | 10px | Random up/down nudge within a lane so rows don't look perfectly rigid |
 | Max Danmaku | 80 | Maximum messages on screen at once |
 
 **Message Style**

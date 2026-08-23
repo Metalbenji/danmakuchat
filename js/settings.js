@@ -26,6 +26,8 @@
     danmakuSpeed: 15,
     speedRandomness: 3,
     danmakuDensity: 28,
+    laneGap: 40,
+    laneJitter: 10,
     maxDanmaku: 80,
     // Appearance - Message Style
     chatBg: 'none',
@@ -187,6 +189,8 @@
           { key: 'danmakuSpeed', label: 'Scroll Speed', type: 'range', min: 3, max: 20, step: 0.5, unit: 's' },
           { key: 'speedRandomness', label: 'Speed Randomness', type: 'range', min: 0, max: 5, step: 0.5, unit: 's' },
           { key: 'danmakuDensity', label: 'Lane Density', type: 'range', min: 20, max: 60, step: 2, unit: 'px' },
+          { key: 'laneGap', label: 'Lane Reuse Gap', type: 'range', min: 0, max: 300, step: 10, unit: 'px' },
+          { key: 'laneJitter', label: 'Vertical Jitter', type: 'range', min: 0, max: 40, step: 2, unit: 'px' },
           { key: 'maxDanmaku', label: 'Max Danmaku Count', type: 'number', min: 10, max: 300, step: 1 },
           // Message Style
           { key: '_sub_message', label: 'Message Style', type: 'subsection' },

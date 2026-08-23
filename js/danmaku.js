@@ -31,6 +31,8 @@ const CFG = {
     danmakuSpeed: Number(getURLParam("danmakuSpeed", 14)),
     speedRandomness: Number(getURLParam("speedRandomness", 2)),
     danmakuDensity: Number(getURLParam("danmakuDensity", 28)),
+    laneGap: Number(getURLParam("laneGap", 40)),
+    laneJitter: Number(getURLParam("laneJitter", 10)),
     maxDanmaku: Number(getURLParam("maxDanmaku", 80)),
     // Message Style
     chatBg: getURLParam("chatBg", "none"),
@@ -173,46 +175,72 @@ function checkSpamProtection(username) {
 }
 
 // ---- Lane Management ----
-var currentLane = 0;
-var lanes = new Map(); // laneIndex -> { element, endTime }
+// Each lane tracks the physics of the message currently occupying it
+// (start time, width, scroll duration) so we can predict whether a new
+// message would catch up to it mid-screen and overlap. This replaces the
+// old "lane free after 30% of duration" rule which caused messages to
+// bunch into evenly-spaced trains on a handful of lines.
+var lanes = new Map(); // laneIndex -> { startTime, width, duration }
 
-function getAvailableLane(duration, elHeight) {
+function _occupantSpeed(occ, containerWidth) {
+    // Pixels per millisecond travelled along the scroll axis.
+    // A message covers (containerWidth + own width) over its duration.
+    return (containerWidth + occ.width) / (occ.duration * 1000);
+}
+
+function _laneWouldCollide(occ, candidate, containerWidth) {
+    var margin = CFG.laneGap;
+    var vOcc = _occupantSpeed(occ, containerWidth);
+    var vNew = (containerWidth + candidate.width) / (candidate.duration * 1000);
+
+    // Gap between the occupant's trailing (right) edge and the candidate's
+    // leading (left) edge at the moment the candidate enters the screen:
+    // the occupant has travelled elapsed*vOcc px, its right edge sits that
+    // far past the right border minus its own width.
+    var gapAtEntry = (candidate.startTime - occ.startTime) * vOcc - occ.width;
+    if (gapAtEntry < margin) return true;
+
+    // If the new message is slower or equal speed, the gap only grows.
+    if (vNew <= vOcc) return false;
+
+    // New message is faster: worst case is just before the occupant exits.
+    var occExit = occ.startTime + occ.duration * 1000;
+    var gapAtExit = gapAtEntry - (occExit - candidate.startTime) * (vNew - vOcc);
+    return gapAtExit < margin;
+}
+
+function getAvailableLane(duration, elWidth, elHeight) {
     var containerHeight = window.innerHeight;
+    var containerWidth = _containerW;
     // Safe lane height: density minus element height, so the bottom of the
     // message never extends past the viewport. Fall back to density if
     // elHeight isn't provided yet.
     var safeStep = (elHeight && elHeight > 0)
         ? Math.max(CFG.danmakuDensity, elHeight + 2)
         : CFG.danmakuDensity;
-    var totalLanes = Math.max(1, Math.floor((containerHeight - elHeight) / safeStep));
+    var totalLanes = Math.max(1, Math.floor((containerHeight - (elHeight || 0)) / safeStep));
     if (totalLanes < 1) totalLanes = 1;
     var now = Date.now();
+    var candidate = { startTime: now, width: elWidth || 0, duration: duration };
 
     // Shuffle start position so messages don't always go top→bottom
     var startOffset = Math.floor(Math.random() * totalLanes);
 
-    // Try lanes in randomised order
+    // First pass: any lane where the new message provably can't catch up
+    // to (or enter on top of) the current occupant?
     for (var attempts = 0; attempts < totalLanes; attempts++) {
         var lane = (startOffset + attempts) % totalLanes;
-
-        var laneData = lanes.get(lane);
-        if (!laneData || laneData.endTime <= now) {
-            lanes.set(lane, { endTime: now + (duration * 0.3) * 1000 });
+        var occ = lanes.get(lane);
+        if (!occ || !_laneWouldCollide(occ, candidate, containerWidth)) {
+            lanes.set(lane, candidate);
             return { index: lane, step: safeStep };
         }
     }
 
-    // All lanes busy, find the one that frees up soonest
-    var soonestLane = 0;
-    var soonestEnd = Infinity;
-    for (var entry of lanes.entries()) {
-        if (entry[1].endTime < soonestEnd) {
-            soonestEnd = entry[1].endTime;
-            soonestLane = entry[0];
-        }
-    }
-    lanes.set(soonestLane, { endTime: now + (duration * 0.3) * 1000 });
-    return { index: soonestLane, step: safeStep };
+    // All lanes busy. Returning null tells the caller to hold the message
+    // in a queue and retry shortly — far better than stacking it on top of
+    // an existing message (the old behaviour that caused visible bunching).
+    return null;
 }
 
 // ---- Layer Routing ----
@@ -548,6 +576,13 @@ function createDanmakuEvent(platform, data) {
     spawnDanmaku(el, true);
 }
 
+// Messages waiting for a lane to free up (FIFO, so chat order is kept).
+// Capped: if the queue itself overflows during a sustained flood, the
+// oldest waiting messages are dropped rather than dumped on screen at once.
+var MAX_PENDING_DANMAKU = 30;
+var _pendingDanmaku = []; // [{ el, duration, isEvent }]
+var _drainScheduled = false;
+
 function spawnDanmaku(el, isEvent) {
     scheduleCull();
 
@@ -570,8 +605,6 @@ function spawnDanmaku(el, isEvent) {
     baseDuration = baseDuration * layerSpeedMult;
     baseDuration = Math.max(2, baseDuration);
 
-    var isRight = CFG.direction === 'right';
-
     // Depth effect: random zoom/opacity for chat messages on back layer
     // Only applies when depthEffect is enabled AND using multiple layers.
     // Uses CSS custom property --dm-depth-scale so it composites with the
@@ -585,30 +618,90 @@ function spawnDanmaku(el, isEvent) {
         el.style.setProperty('--dm-opacity', (CFG.danmakuOpacity * depthOpacity).toFixed(3));
     }
 
-    // Append to DOM first so offsetWidth is accurate.
-    // Batch all DOM reads together (width/height) before any writes (left/top)
-    // to avoid forced synchronous reflows from interleaved read/write.
+    // Append hidden so offsetWidth/offsetHeight are measurable, then try to
+    // launch immediately. If every lane is occupied the element stays hidden
+    // in the pending queue until a lane frees up.
     el.style.visibility = 'hidden';
+    el.dataset.dmWaiting = '1';
     danmakuLayer.appendChild(el);
-    // Trim excess elements to prevent memory leaks during long streams
-    while (danmakuLayer.children.length > CFG.maxDanmaku) {
-        danmakuLayer.removeChild(danmakuLayer.firstChild);
+
+    _pendingDanmaku.push({ el: el, duration: baseDuration, isEvent: !!isEvent });
+    _drainPending();
+}
+
+function _drainPending() {
+    if (_pendingDanmaku.length === 0) return;
+
+    // Launch as many queued messages as lanes safely allow (in order).
+    while (_pendingDanmaku.length > 0) {
+        var item = _pendingDanmaku[0];
+        // Element may have been removed by culling/trimming while waiting.
+        if (!item.el.parentNode) {
+            _pendingDanmaku.shift();
+            continue;
+        }
+        var elWidth = item.el.offsetWidth;
+        var elHeight = item.el.offsetHeight;
+        var laneInfo = getAvailableLane(item.duration, elWidth, elHeight);
+        if (!laneInfo) break; // no safe lane right now — retry later
+
+        _pendingDanmaku.shift();
+        delete item.el.dataset.dmWaiting;
+        _launchDanmaku(item.el, item.duration, item.isEvent, laneInfo, elWidth, elHeight);
     }
 
-    var elWidth = el.offsetWidth;
-    var elHeight = el.offsetHeight;
+    // Trim waiting + on-screen excess to prevent memory leaks. Prefer
+    // dropping the oldest WAITING messages (never shown yet).
+    while (danmakuLayer.children.length > CFG.maxDanmaku) {
+        var victim = null;
+        for (var ci = 0; ci < danmakuLayer.children.length; ci++) {
+            var child = danmakuLayer.children[ci];
+            if (child.dataset && child.dataset.dmWaiting) { victim = child; break; }
+        }
+        if (!victim) {
+            // Nothing waiting — drop the oldest animated element instead.
+            victim = danmakuLayer.firstChild;
+        }
+        if (!victim) break;
+        for (var pi = 0; pi < _pendingDanmaku.length; pi++) {
+            if (_pendingDanmaku[pi].el === victim) { _pendingDanmaku.splice(pi, 1); break; }
+        }
+        victim.remove();
+    }
+    // Hard cap the wait queue during sustained floods.
+    while (_pendingDanmaku.length > MAX_PENDING_DANMAKU) {
+        var dropped = _pendingDanmaku.shift();
+        if (dropped.el.parentNode) dropped.el.remove();
+    }
+
+    // Still have waiters? Poll again shortly (lanes free up continuously).
+    if (_pendingDanmaku.length > 0 && !_drainScheduled) {
+        _drainScheduled = true;
+        setTimeout(function() {
+            _drainScheduled = false;
+            _drainPending();
+        }, 250);
+    }
+}
+
+function _launchDanmaku(el, baseDuration, isEvent, laneInfo, elWidth, elHeight) {
     var containerWidth = _containerW;
     var containerHeight = _containerH;
 
-    // Get a lane that fits within the viewport
-    var laneInfo = getAvailableLane(baseDuration, elHeight);
+    // Vertical jitter: nudge the message randomly inside its lane band so
+    // reused lanes don't form perfectly rigid conveyor-belt lines. Clamped
+    // to half the slack in the band so neighbouring lanes never overlap.
     var maxTop = Math.max(0, containerHeight - elHeight);
-    var laneTop = Math.min(laneInfo.index * laneInfo.step, maxTop);
+    var bandSlack = Math.max(0, laneInfo.step - elHeight);
+    var jMax = Math.max(0, Math.min(CFG.laneJitter, bandSlack / 2));
+    var jitter = jMax > 0 ? (Math.random() * 2 - 1) * jMax : 0;
+    var laneTop = Math.min(Math.max(0, laneInfo.index * laneInfo.step + jitter), maxTop);
 
     // Position element at the starting edge
     el.style.top = laneTop + 'px';
 
     // Use native CSS @keyframes animation (GPU-composited, buttery smooth)
+    var isRight = CFG.direction === 'right';
     if (isRight) {
         // Left to Right: start off-screen left
         el.style.left = -(elWidth + 20) + 'px';
@@ -643,6 +736,7 @@ window.addEventListener('resize', function() {
     lanes.clear();
     _containerW = window.innerWidth;
     _containerH = window.innerHeight;
+    _drainPending(); // lanes were just cleared — retry queued messages now
 });
 
 // Debounce cull so multiple rapid spawns don't force layout repeatedly.
@@ -667,6 +761,9 @@ function cullOldDanmaku() {
     // which forces a full synchronous layout/reflow — the #1 perf killer.
     for (var i = items.length - 1; i >= 0 && removed < toRemove; i--) {
         var item = items[i];
+        // Never cull messages waiting in the launch queue — they haven't
+        // been shown yet (no animation assigned on purpose).
+        if (item.dataset && item.dataset.dmWaiting) continue;
         // Check if animation has finished or element is off-screen.
         // Elements that finished animating have animation === '' or 'none'.
         var anim = getComputedStyle(item).animation;
