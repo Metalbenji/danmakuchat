@@ -31,15 +31,21 @@ html, body {
 }
 
 /* ---- Layer variants ---- */
+/*
+   NOTE ON SMOOTHNESS:
+   A `filter: blur()` applied directly to the scrolling container forces OBS/CEF
+   to re-rasterize the whole layer on EVERY animation frame, which is the main
+   cause of stuttery back-layer scrolling. The blur is therefore applied from JS
+   (danmaku.js) only when `backLayerBlur > 0`. Leave it at 0 for buttery, fully
+   GPU-composited scrolling of the back layer.
+*/
 
 #danmaku-layer.layer-back {
-    filter: blur(var(--dm-back-blur, 2px));
-    /* Force GPU layer promotion for blur compositing */
+    /* blur applied from JS only when backLayerBlur > 0 */
     transform: translate3d(0, 0, 0);
 }
 
 #danmaku-layer.layer-middle {
-    filter: blur(var(--dm-middle-blur, 0.5px));
     transform: translate3d(0, 0, 0);
 }
 

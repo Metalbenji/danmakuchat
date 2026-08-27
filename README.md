@@ -189,7 +189,8 @@ Open `settings.html` to access the full settings dashboard. All settings are org
 | Front Layer Chance | 20% | Chance a normal chat message goes to the front layer |
 | Back Layer Chance | 30% | Chance a normal chat message goes to the back layer |
 
-| Events | Always | Events (subs, follows, donations) always go to front |
+| Events | Front (default) | Events scroll on the front layer; use **Event Back Layer Chance** to send a proportion to the back layer instead |
+| Event Back Layer Chance | 30% | Chance an event (sub, follow, donation) scrolls on the back layer instead of the front |
 
 **Star-Field Depth Effect**
 | Setting | Default | Description |

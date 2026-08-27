@@ -52,6 +52,7 @@
     frontChance: 0.5,
     backChance: 0.3,
     eventMiddleChance: 0.3,
+    eventBackChance: 0.3,
     depthEffect: true,
     depthMinScale: 0.2,
     depthMaxScale: 1.5,
@@ -248,6 +249,7 @@
             { value: 'all', label: 'All Layers (stacked)' },
           ]},
           { key: 'frontChance', label: 'Front Layer Chance', type: 'range', min: 0, max: 1, step: 0.05, unit: '%', displayPercent: true },
+          { key: 'eventBackChance', label: 'Event Back Layer Chance', type: 'range', min: 0, max: 1, step: 0.05, unit: '%', displayPercent: true },
           // Star-Field Depth
           { key: '_sub_depth', label: 'Star-Field Depth Effect', type: 'subsection' },
           { key: 'depthEffect', label: 'Depth Effect', type: 'toggle' },

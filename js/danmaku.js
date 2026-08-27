@@ -54,6 +54,9 @@ const CFG = {
     elementGap: Number(getURLParam("elementGap", 5)),
     // Depth & Layers
     frontChance: Number(getURLParam("frontChance", 0.5)),
+    // Chance an event (sub, follow, donation, etc.) scrolls on the back layer
+    // instead of the front layer. 0 = events always on front, 1 = events always on back.
+    eventBackChance: Number(getURLParam("eventBackChance", 0.3)),
 
 
     depthEffect: getURLParam("depthEffect", true),
@@ -116,7 +119,7 @@ danmakuLayer.classList.add('layer-' + CFG.LAYER);
 
 
 // Apply layer-specific blur (distance effect)
-if (CFG.LAYER === 'back') {
+if (CFG.LAYER === 'back' && CFG.backLayerBlur > 0) {
     danmakuLayer.style.filter = 'blur(' + CFG.backLayerBlur + 'px)';
 }
 
@@ -263,14 +266,28 @@ function _getAssignedLayer(username, text) {
     return 'back';
 }
 
+// Deterministic routing so all OBS sources agree which layer an event goes to.
+// Events routed to 'back' scroll behind you with the standard chat depth effect;
+// the rest go to the front layer. eventBackChance controls the split.
+function _getEventLayer(platform, data) {
+    var seed = (data && (data.username || '')) + '|'
+        + (data && (data.action || '')) + '|'
+        + (data && (data.value || '')) + '|'
+        + (data && (data.message || data.text || '')) + '|'
+        + platform;
+    var r = _hashStr(seed);
+    if (r < CFG.eventBackChance) return 'back';
+    return 'front';
+}
+
 function shouldShowMessage(type, data, forceFront) {
     // Force to front layer (used for subscriber image messages)
     if (forceFront) {
         return CFG.LAYER === 'front';
     }
     if (type === 'event') {
-        // Events always route to front
-        return CFG.LAYER === 'front';
+        // Events have a configurable chance of scrolling on the back layer
+        return _getEventLayer('', data) === CFG.LAYER;
     }
     // Chat: deterministically route to a layer
     var username = (data && (data.username || data.user || '')) || '';
@@ -485,7 +502,7 @@ function createDanmakuChat(platform, data) {
 }
 
 function createDanmakuEvent(platform, data) {
-    if (!shouldShowMessage('event')) return;
+    if (!shouldShowMessage('event', data)) return;
 
     var el = document.createElement('div');
     var cls = 'danmaku-item event ' + platform;
