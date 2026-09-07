@@ -458,7 +458,7 @@ function createDanmakuChat(platform, data) {
         }
     }
 
-    html += '<span class="danmaku-message">' + msgContent + '</span>';
+    html += '<span class="danmaku-message">' + maybeEmojify(msgContent) + '</span>';
 
     // Timestamp
     if (CFG.showTimestamps) {
@@ -497,6 +497,8 @@ function createDanmakuChat(platform, data) {
             this.style.display = 'none';
         };
     });
+
+    attachEmojiFallback(el);
 
     spawnDanmaku(el, false);
 }
@@ -564,9 +566,9 @@ function createDanmakuEvent(platform, data) {
 
     // Message
     if (data.messageHtml) {
-        html += '<span class="danmaku-message">' + data.messageHtml + '</span>';
+        html += '<span class="danmaku-message">' + maybeEmojify(data.messageHtml) + '</span>';
     } else if (data.message) {
-        html += '<span class="danmaku-message">' + escapeHTML(data.message) + '</span>';
+        html += '<span class="danmaku-message">' + maybeEmojify(escapeHTML(data.message)) + '</span>';
     }
 
     el.innerHTML = safeSanitize(html, {
@@ -589,6 +591,8 @@ function createDanmakuEvent(platform, data) {
     if (evtAvatarEl && evtAvatarEl.src.indexOf('data:') !== 0) {
         evtAvatarEl.onerror = function() { this.src = evtFallbackAvatar; };
     }
+
+    attachEmojiFallback(el);
 
     spawnDanmaku(el, true);
 }
@@ -847,6 +851,65 @@ function escapeHTML(str) {
     if (!str) return '';
     _escapeDiv.textContent = str;
     return _escapeDiv.innerHTML;
+}
+
+// ---- Unicode emoji -> twemoji image conversion ----
+// Converts raw unicode emojis found in plain chat text into properly sized
+// twemoji <img>s (scaled by the CSS .dm-emoji rule) so they render crisply
+// and consistently on every platform regardless of the system emoji fonts.
+// Runs AFTER sanitization-safe HTML building; images failing to load fall
+// back to the original text glyph via attachEmojiFallback().
+var TWEMOJI_BASE = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/';
+// Matches emoji SEQUENCES structurally (not blanket runs): a keycap, a flag
+// pair, or a base emoji optionally followed by a variation selector / skin
+// tone modifier and ZWJ-joined further members. This keeps single adjacent
+// emojis separate (so 💀💀💀 = three images) while ZWJ sequences (family,
+// profession, heart-on-fire) stay intact as one image. Replaced in ONE pass
+// so the inserted HTML is never re-processed.
+var _emojiB = '\\u{1F000}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{2B00}-\\u{2BFF}\\u{2E50}-\\u{2E7F}\\u{1F1E6}-\\u{1F1FF}\\u{00A9}\\u{00AE}\\u{203C}\\u{2049}\\u{2122}\\u{2139}\\u{2194}-\\u{2199}\\u{21A9}-\\u{21AA}\\u{231A}-\\u{231B}\\u{2328}\\u{23CF}\\u{23E9}-\\u{23F3}\\u{23F8}-\\u{23FA}\\u{24C2}\\u{25AA}-\\u{25AB}\\u{25B6}\\u{25C0}\\u{25FB}-\\u{25FE}\\u{260E}\\u{2611}\\u{2614}-\\u{2615}\\u{2618}\\u{261D}\\u{2620}\\u{2622}-\\u{2623}\\u{2626}\\u{262A}\\u{262E}-\\u{262F}\\u{2638}-\\u{263A}\\u{2640}\\u{2642}\\u{2648}-\\u{2653}\\u{265F}\\u{2660}\\u{2663}\\u{2665}-\\u{2666}\\u{2668}\\u{267B}\\u{267E}-\\u{267F}\\u{2692}-\\u{2697}\\u{2699}\\u{269B}-\\u{269C}\\u{26A0}-\\u{26A1}\\u{26A7}\\u{26AA}-\\u{26AB}\\u{26B0}-\\u{26B1}\\u{26BD}-\\u{26BE}\\u{26C4}-\\u{26C5}\\u{26C8}\\u{26CE}-\\u{26CF}\\u{26D1}\\u{26D3}-\\u{26D4}\\u{26E9}-\\u{26EA}\\u{26F0}-\\u{26F5}\\u{26F7}-\\u{26FA}\\u{26FD}\\u{2702}\\u{2705}\\u{2708}-\\u{270D}\\u{270F}\\u{2712}\\u{2714}\\u{2716}\\u{271D}\\u{2721}\\u{2728}\\u{2733}-\\u{2734}\\u{2744}\\u{2747}\\u{274C}\\u{274E}\\u{2753}-\\u{2755}\\u{2757}\\u{2763}-\\u{2764}\\u{2795}-\\u{2797}\\u{27A1}\\u{27B0}\\u{27BF}\\u{2934}-\\u{2935}\\u{2B05}-\\u{2B07}\\u{2B1B}-\\u{2B1C}\\u{2B50}\\u{2B55}\\u{3030}\\u{303D}\\u{3297}\\u{3299}';
+var _emojiRe = new RegExp('(?:[0-9#*]\\u{FE0F}\\u{20E3}|[\\u{1F1E6}-\\u{1F1FF}][\\u{1F1E6}-\\u{1F1FF}]|[' + _emojiB + '](?:[\\u{FE0F}\\u{1F3FB}-\\u{1F3FF}])?(?:\\u{200D}[' + _emojiB + '](?:[\\u{FE0F}\\u{1F3FB}-\\u{1F3FF}])?)*)', 'gu');
+
+function _emojiToImg(m) {
+    var isKeycap = /^[0-9#*]\u{FE0F}\u{20E3}$/u.test(m);
+    // Keycaps keep FE0F in the twemoji filename; variation selectors are
+    // otherwise stripped (part of the glyph, not the filename).
+    var clean = isKeycap ? m : m.replace(/\u{FE0F}/gu, '');
+    if (!clean) return m;
+    var cps = [];
+    var i = 0;
+    while (i < clean.length) {
+        var cp = clean.codePointAt(i);
+        var hex = cp.toString(16);
+        if (cp <= 0xFFFF && hex.length < 4) hex = ('0000' + hex).slice(-4);
+        cps.push(hex);
+        i += (cp > 0xFFFF) ? 2 : 1;
+    }
+    return '<img class="emote dm-emoji" src="' + TWEMOJI_BASE + cps.join('-') + '.png" alt="' + m + '" title="' + m + '">';
+}
+
+function emojifyText(text) {
+    if (typeof text !== 'string' || !text) return text;
+    return text.replace(_emojiRe, _emojiToImg);
+}
+
+// Emojify plain text / platform HTML, but never touch HTML that already
+// contains <img> (e.g. parsed emotes) to avoid corrupting img attributes.
+function maybeEmojify(html) {
+    if (typeof html !== 'string' || html.indexOf('<img') !== -1) return html;
+    return emojifyText(html);
+}
+
+// If a converted emoji image fails to load (offline etc.), swap it back to
+// the original text glyph so the message stays readable.
+function attachEmojiFallback(el) {
+    var imgs = el.querySelectorAll('img.dm-emoji');
+    imgs.forEach(function(img) {
+        img.addEventListener('error', function() {
+            var t = document.createElement('span');
+            t.textContent = img.getAttribute('alt') || '';
+            if (img.parentNode) img.parentNode.replaceChild(t, img);
+        });
+    });
 }
 
 function formatNumber(num) {

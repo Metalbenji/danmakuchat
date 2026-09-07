@@ -222,6 +222,9 @@ async function getTwitchMessageFromParts(parts) {
     return parts.map(function(part) {
         if (part.type === 'emote') {
             if (part.source === 'Twemoji') {
+                if (part.imageUrl) {
+                    return '<img src="' + part.imageUrl + '" alt="' + escapeHTML(part.text) + '" title="' + escapeHTML(part.text) + '" class="emote">';
+                }
                 return escapeHTML(part.text);
             }
             return '<img src="' + part.imageUrl + '" alt="' + escapeHTML(part.text) + '" title="' + escapeHTML(part.text) + '" class="emote">';

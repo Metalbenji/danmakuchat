@@ -1095,6 +1095,10 @@
     { platform: 'tiktok', username: 'vibe.check', color: '#25f4ee', text: 'no cap this is fire' },
     { platform: 'tiktok', username: 'clout chaser', color: '#ff0050', text: 'follow me back plz' },
     { platform: 'tiktok', username: 'lol king', color: '#fe2c55', text: '💀💀💀' },
+    { platform: 'twitch', username: 'EmojiFanatic', color: '#e91e63', text: 'this is fire 🔥🔥🔥' },
+    { platform: 'youtube', username: 'FamilyGuy', color: '#00bcd4', text: '👨‍👩‍👧‍👦 family stream time' },
+    { platform: 'kick', username: 'GlobalViewer', color: '#53fc18', text: '🇺🇸🇧🇷🇩🇪 watching from everywhere' },
+    { platform: 'twitch', username: 'HeartThrob', color: '#ff6b6b', text: '❤️‍🔥 so much love for this stream ❤️' },
     { platform: 'tiktok', username: 'random user', color: '#25f4ee', text: 'POV: you found the best live' },
     { platform: 'tiktok', username: 'shadow lurker', color: '#ff0050', text: 'im just watching quietly' },
   ];

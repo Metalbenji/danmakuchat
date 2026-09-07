@@ -269,9 +269,14 @@ html, body {
 }
 
 /* ---- Message ---- */
-.danmaku-item .danmaku-message img.emote {
-    height: 22px;
+/* Emotes (Twitch/BTTV/7TV/Kick/YouTube) and unicode emojis (converted to
+   twemoji images) are sized relative to the message font so they scale with
+   the Font Size slider instead of staying a tiny fixed 22px. */
+.danmaku-item .danmaku-message img.emote,
+.danmaku-item .danmaku-message img.dm-emoji {
+    height: 1.1em;
     width: auto;
+    max-height: 1.7em;
     vertical-align: middle;
     display: inline-block;
 }
@@ -425,9 +430,11 @@ html, body {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-.danmaku-item.event .danmaku-message img.emote {
-    height: 24px;
+.danmaku-item.event .danmaku-message img.emote,
+.danmaku-item.event .danmaku-message img.dm-emoji {
+    height: 1.1em;
     width: auto;
+    max-height: 1.7em;
     vertical-align: middle;
     display: inline-block;
 }
