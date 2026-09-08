@@ -217,17 +217,36 @@ async function getTwitchAvatar(login, color, profileImageUrl) {
     return fallback;
 }
 
+// Twitch's emote CDN template is:
+//   https://static-cdn.jtvnw.net/emoticons/v2/{id}/{format}/{theme}/{scale}
+// where {format} is 'default' | 'static' | 'animated'. Twitch's docs:
+//   "Use `default` if you want the server to return an animated GIF if it
+//    exists, otherwise, a static PNG."
+// Benchmarks consistently request the 'default' format at a larger scale so
+// animated (GIF) emotes actually play and stay crisp, while non-animated
+// emotes harmlessly fall back to their static PNG.
+function upgradeTwitchEmoteUrl(url) {
+    if (typeof url !== 'string' || !url) return url;
+    // Only touch native Twitch emote URLs (v2 template). Third-party emotes
+    // (bttv/ffz/7tv/twemoji) pass through untouched.
+    var m = url.match(/^(https?:\/\/static-cdn\.jtvnw\.net\/emoticons\/v2\/[^/]+)\/(?:static|default|animated)\/(dark|light)\/([0-9.]+)$/i);
+    if (!m) return url;
+    var id = m[1];
+    var theme = m[2];
+    return id + '/default/' + theme + '/3.0';
+}
+
 async function getTwitchMessageFromParts(parts) {
     if (!parts || !Array.isArray(parts)) return '';
     return parts.map(function(part) {
         if (part.type === 'emote') {
             if (part.source === 'Twemoji') {
                 if (part.imageUrl) {
-                    return '<img src="' + part.imageUrl + '" alt="' + escapeHTML(part.text) + '" title="' + escapeHTML(part.text) + '" class="emote">';
+                    return '<img src="' + escapeHTML(part.imageUrl) + '" alt="' + escapeHTML(part.text) + '" title="' + escapeHTML(part.text) + '" class="emote">';
                 }
                 return escapeHTML(part.text);
             }
-            return '<img src="' + part.imageUrl + '" alt="' + escapeHTML(part.text) + '" title="' + escapeHTML(part.text) + '" class="emote">';
+            return '<img src="' + escapeHTML(upgradeTwitchEmoteUrl(part.imageUrl)) + '" alt="' + escapeHTML(part.text) + '" title="' + escapeHTML(part.text) + '" class="emote">';
         }
         if (part.type === 'cheer') {
             return escapeHTML(part.text);
