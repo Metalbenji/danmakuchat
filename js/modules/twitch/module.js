@@ -251,6 +251,16 @@ async function getTwitchMessageFromParts(parts) {
         if (part.type === 'cheer') {
             return escapeHTML(part.text);
         }
+        // Twitch GIF Keyboard (GIPHY) GIFs arrive as their own fragment type
+        // ('gif'). Streamer.bot surfaces them as 'Twitch Gif' / 'Gif' parts with
+        // an image URL. Render the MP4/GIF via an <img> so it animates natively.
+        // Tolerate casing and multiple possible URL field shapes.
+        if (/^gif$/i.test(part.type)) {
+            var gifUrl = part.imageUrl || (part.gif && part.gif.url) || part.url;
+            if (gifUrl) {
+                return '<img src="' + escapeHTML(gifUrl) + '" alt="[GIF]" title="[GIF]" class="emote">';
+            }
+        }
         if (typeof part.text === 'string') {
             return escapeHTML(part.text);
         }
